@@ -5,6 +5,7 @@ import Today from './components/Today.jsx'
 import Journey from './components/Journey.jsx'
 import Tools from './components/Tools.jsx'
 import Keepsake from './components/Keepsake.jsx'
+import CelebrateCard from './components/CelebrateCard.jsx'
 
 const TABS = [
   { id: 'today', label: '🌤 Today' },
@@ -24,6 +25,7 @@ export default function App() {
   const [stripView, setStripView] = useState('week')
   const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
   const [keepsake, setKeepsake] = useState(null) // 'YYYY-MM' while the keepsake preview is open
+  const [celebrate, setCelebrate] = useState(null) // { kind: 'streak'|'month', ... } while a quiet card is open
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -127,6 +129,7 @@ export default function App() {
             journeyMonth={journeyMonth}
             setJourneyMonth={setJourneyMonth}
             onKeepsake={setKeepsake}
+            onCelebrate={setCelebrate}
             addHabit={addHabit}
             removeHabit={removeHabit}
             slipHabit={slipHabit}
@@ -136,6 +139,7 @@ export default function App() {
       </main>
 
       {keepsake && <Keepsake prefix={keepsake} onClose={() => setKeepsake(null)} />}
+      {celebrate && <CelebrateCard spec={celebrate} onClose={() => setCelebrate(null)} />}
 
       <footer className="footer">
         <p className="care">

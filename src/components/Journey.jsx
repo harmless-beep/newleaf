@@ -56,7 +56,7 @@ const keptMark = (kept, tracked) =>
     </span>
   )
 
-export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, addHabit, removeHabit, slipHabit, onKeepsake = () => {} }) {
+export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, addHabit, removeHabit, slipHabit, onKeepsake = () => {}, onCelebrate = () => {} }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
   const today = dateKey()
   const currentPrefix = today.slice(0, 7)
@@ -244,6 +244,11 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
             </p>
           </>
         )}
+        <p className="mute" style={{ margin: '14px 0 0' }}>
+          <button type="button" className="text-link" onClick={() => onCelebrate({ kind: 'month', month: viewPrefix })}>
+            a quiet card for this month →
+          </button>
+        </p>
       </section>
 
       <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={viewPrefix} past={viewPast} />
@@ -321,6 +326,12 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                 ))}
               </ul>
             </details>
+
+            <p className="mute" style={{ margin: '14px 0 0' }}>
+              <button type="button" className="text-link" onClick={() => onCelebrate({ kind: 'streak', habitId: id })}>
+                a quiet card to celebrate →
+              </button>
+            </p>
 
             {confirming && confirm.type === 'slip' ? (
               <div className="confirm-box" role="alertdialog" aria-label="Confirm a slip">

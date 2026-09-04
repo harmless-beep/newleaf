@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import fs from 'node:fs'
 
 // End-to-end smoke tests against the real production build.
 // Each test gets a fresh browser context, so localStorage always starts clean.
@@ -422,6 +423,49 @@ test('a month exports as a keepsake PDF with calendar, reflection and journal', 
 
   await page.getByRole('button', { name: 'Done' }).click()
   await expect(page.locator('.keepsake-layer')).toHaveCount(0)
+})
+
+test('a streak can be kept or shared as a quiet PNG card, drawn on-device', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /Pornography/ }).first().click()
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  await page.getByRole('button', { name: /quiet card to celebrate/ }).click()
+  const card = page.locator('.celebrate')
+  await expect(card.getByRole('heading', { name: /A quiet card for Pornography/ })).toBeVisible()
+  await expect(card.locator('canvas')).toHaveAttribute('width', '1080')
+
+  // Download produces a real PNG with the expected name.
+  const [download] = await Promise.all([page.waitForEvent('download'), card.getByRole('button', { name: 'Download PNG' }).click()])
+  expect(download.suggestedFilename()).toMatch(/new-leaf-pornography-day-1\.png/)
+  fs.mkdirSync('test-results', { recursive: true })
+  const path = 'test-results/streak-card.png'
+  await download.saveAs(path)
+  const head = fs.readFileSync(path).subarray(0, 8)
+  expect(head.equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(true)
+
+  await card.getByRole('button', { name: 'Done' }).click()
+  await expect(page.locator('.card-layer')).toHaveCount(0)
+})
+
+test('any month can be drawn into a quiet celebration card', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 0, 20, 9, 0) })
+  await page.addInitScript(() => {
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+    localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor: '2026-01-01', best: 0 } }))
+    localStorage.setItem('nl.checkins', JSON.stringify({ '2026-01-20': 'steady', '2026-01-19': 'bright' }))
+  })
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  await page.getByRole('button', { name: /quiet card for this month/ }).click()
+  const card = page.locator('.celebrate')
+  await expect(card.getByRole('heading', { name: /A quiet card for your month/ })).toBeVisible()
+  await expect(card.locator('canvas')).toHaveAttribute('width', '1080')
+  await expect(card.getByText(/2 of 20 days checked in/)).toBeVisible()
+
+  await card.getByRole('button', { name: 'Done' }).click()
+  await expect(page.locator('.card-layer')).toHaveCount(0)
 })
 
 test('urge tools: breathing, grounding, ride the wave and journal all work', async ({ page }) => {
