@@ -54,10 +54,13 @@ as the web version.
 - The release keystore (`android/newleaf-release.keystore`) is **not**
   committed — it lives only on this machine so you can sign future
   updates. Keep it safe; the password is in `android/keystore.properties`.
-- The wrapper's warm details: sage status bar, cream splash with a leaf
+- The wrapper's warm details: edge-to-edge display (the cream page runs
+  behind transparent system bars and pads itself around them), a gentle
+  fade-in from the cream splash as the page loads, a soft native tick on
+  every check-in tap, sage status bar accents, cream splash with a leaf
   mark, and a hand-drawn leaf launcher icon (real PNGs at every mipmap
   density — cream tile, transparent adaptive foreground, plus a round
-  variant) all match the site's palette. Regenerate them anytime with
+  variant) all match the site's palette. Regenerate the icon anytime with
   `node scripts/make-icon.mjs`.
 
 ## Add your own content

@@ -2,8 +2,9 @@
 <resources>
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash</item>
-        <item name="android:statusBarColor">@color/sage</item>
-        <item name="android:navigationBarColor">@color/warm_cream</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <!-- Edge-to-edge: bars are transparent, dark icons sit over the cream page. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

@@ -4,6 +4,9 @@
    ============================================================ */
 
 :root {
+  /* Set by the Android wrapper (edge-to-edge). 0 on the web. */
+  --inset-top: 0px;
+  --inset-bottom: 0px;
   --bg: #fbf3e7;
   --bg-2: #f6ead6;
   --card: rgba(255, 251, 244, 0.92);
@@ -72,7 +75,8 @@ button {
 .app {
   max-width: 780px;
   margin: 0 auto;
-  padding: 0 18px 90px;
+  /* Top inset clears the transparent status bar; bottom clears the gesture bar. */
+  padding: var(--inset-top) 18px calc(90px + var(--inset-bottom));
 }
 
 .fade-in {
@@ -94,7 +98,8 @@ button {
 
 .site-header {
   position: sticky;
-  top: 0;
+  /* Below the transparent status bar once stuck. */
+  top: var(--inset-top);
   z-index: 20;
   backdrop-filter: blur(10px);
   background: rgba(251, 243, 231, 0.86);
@@ -999,7 +1004,7 @@ textarea.journal:focus {
   z-index: 80;
   overflow: auto;
   background: #f6ecdc;
-  padding: 18px;
+  padding: calc(18px + var(--inset-top)) 18px calc(18px + var(--inset-bottom));
 }
 
 .keepsake {
@@ -1170,7 +1175,7 @@ textarea.journal:focus {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 14px;
+  bottom: calc(14px + var(--inset-bottom));
   display: flex;
   gap: 10px;
   align-items: center;
@@ -1220,7 +1225,7 @@ textarea.journal:focus {
   overflow: auto;
   background: rgba(70, 53, 42, 0.4);
   backdrop-filter: blur(4px);
-  padding: 24px 16px;
+  padding: calc(24px + var(--inset-top)) 16px calc(24px + var(--inset-bottom));
 }
 
 .celebrate {
@@ -1602,7 +1607,7 @@ textarea.journal:focus {
 
 @media (max-width: 560px) {
   .app {
-    padding: 0 12px 80px;
+    padding: var(--inset-top) 12px calc(80px + var(--inset-bottom));
   }
   .header-inner {
     flex-direction: column;

@@ -3,6 +3,7 @@ import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID, WIND_DOWN } from '../data/wi
 import { HABIT_BY_ID } from '../data/habits.js'
 import { moodOf, setMood } from '../lib/checkins.js'
 import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
+import { nativeTick } from '../lib/native.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function dailyIndex(key) {
@@ -30,7 +31,15 @@ function MoodButtons({ onPick, label }) {
   return (
     <div className="mood-grid" role="group" aria-label={label}>
       {MOODS.map((m) => (
-        <button key={m.id} type="button" className="mood" onClick={() => onPick(m.id)}>
+        <button
+          key={m.id}
+          type="button"
+          className="mood"
+          onClick={() => {
+            nativeTick() // a soft native tap inside the Android app
+            onPick(m.id)
+          }}
+        >
           <span aria-hidden="true">{m.emoji}</span>
           {m.name}
         </button>
