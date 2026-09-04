@@ -64,6 +64,31 @@ function Reflection({ today, picks, runs, checkins, monthKey, past }) {
           : 'Restless days rose too, and each one passed. You outlasted every wave.'
       )
     }
+
+    // Morning-vs-evening shifts, only where both were honestly recorded.
+    const isLight = (id) => id === 'bright' || id === 'steady' || id === 'quiet'
+    let paired = 0
+    let dip = 0
+    let rise = 0
+    for (const k of monthKeys) {
+      const m = moodOf(checkins, k, 'morning')
+      const e = moodOf(checkins, k, 'evening')
+      if (!m || !e) continue
+      paired += 1
+      if (isLight(m) && !isLight(e)) dip += 1
+      else if (!isLight(m) && isLight(e)) rise += 1
+    }
+    if (paired >= 3) {
+      if (dip >= 2 && dip >= rise) {
+        lines.push(
+          `On ${dip} of ${paired} fully checked-in days you started lighter and ended restless or heavy — a quiet pattern worth noticing. It’s information, not failure: something in those days may be asking for care.`
+        )
+      } else if (rise >= 2 && rise > dip) {
+        lines.push(
+          `On ${rise} of ${paired} fully checked-in days you started restless or heavy and ended lighter — something in the day turned things around. Worth remembering.`
+        )
+      }
+    }
   }
 
   for (const id of picks) {

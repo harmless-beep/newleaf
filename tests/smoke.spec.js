@@ -132,6 +132,29 @@ test('a seeded month of check-ins and a long run produce a gentle monthly reflec
   }
 })
 
+test('morning-to-evening shifts surface as a gentle pattern note', async ({ page }) => {
+  // Fixed mid-January clock; five days each record a morning and an evening
+  // mood: four start bright and end heavy, one turns the other way.
+  await page.clock.install({ time: new Date(2026, 0, 20, 9, 0) })
+  await page.addInitScript(() => {
+    const days = ['2026-01-16', '2026-01-17', '2026-01-18', '2026-01-19', '2026-01-20']
+    const checkins = {}
+    days.forEach((k, i) => {
+      checkins[k] =
+        i === 4 ? { morning: 'heavy', evening: 'bright' } : { morning: 'bright', evening: 'heavy' }
+    })
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+    localStorage.setItem('nl.checkins', JSON.stringify(checkins))
+  })
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  await expect(page.getByRole('heading', { name: 'Your January, gently' })).toBeVisible()
+  await expect(page.getByText(/On 4 of 5 fully checked-in days you started lighter and ended restless or heavy/)).toBeVisible()
+  await expect(page.getByText(/worth noticing/)).toBeVisible()
+})
+
 test('the journey strip expands into a full-month calendar view and back', async ({ page }) => {
   const now = new Date()
   const monthName = now.toLocaleDateString(undefined, { month: 'long' })
