@@ -101,6 +101,14 @@ as the web version.
 - Message-of-the-day, milestones, check-in moods, tool lines: `src/data/wisdom.js`
 - Palette and styles: `src/styles.css`
 
+## Commits
+
+Every commit in this project is authored by the repo owner alone. A
+`commit-msg` hook (`git-hooks/commit-msg`) strips any co-author footer
+before a commit is created, so it can never land in the history. After
+cloning the repo, run `sh scripts/install-git-hooks.sh` once to install
+it into your checkout.
+
 ## Privacy
 
 No code in this project ever sends your data anywhere. Data lives in

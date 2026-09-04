@@ -1,0 +1,10 @@
+#!/bin/sh
+# Every commit must be authored by the repo owner alone. This hook strips the
+# Codebuff co-author footer if it ever appears, before the commit is created.
+MSG="$1"
+[ -f "$MSG" ] || exit 0
+grep -v -e '^🤖 Generated with Codebuff$' -e '^Co-Authored-By: Codebuff <noreply@codebuff.com>$' "$MSG" > "${MSG}.clean"
+# Collapse trailing blank lines to exactly one newline.
+perl -0pi -e 's/\n+\z/\n/' "${MSG}.clean"
+mv "${MSG}.clean" "$MSG"
+exit 0
