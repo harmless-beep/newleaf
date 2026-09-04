@@ -9,6 +9,10 @@ const toolTabs = (page) => page.getByRole('tablist', { name: 'Urge tools' })
 test('home page loads with greeting, note of the day and tabs', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveTitle(/New Leaf/)
+  // Social sharing card metadata points at the hosted preview image.
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /New Leaf/)
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /og-cover\.png$/)
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image')
   await expect(page.getByRole('heading', { level: 1 }).first()).toContainText(
     /Good (morning|afternoon|evening)|Still up\?/
   )

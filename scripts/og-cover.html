@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background:
+      radial-gradient(560px 380px at 90% -8%, rgba(224, 166, 62, 0.30), transparent 65%),
+      radial-gradient(540px 360px at -6% 18%, rgba(201, 111, 74, 0.20), transparent 60%),
+      radial-gradient(600px 400px at 50% 120%, rgba(125, 156, 99, 0.22), transparent 68%),
+      linear-gradient(135deg, #fdf6ea 0%, #f9ead2 55%, #f1dcbd 100%);
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+    color: #46352a;
+  }
+  .frame {
+    position: absolute;
+    inset: 26px;
+    border: 2px solid rgba(238, 220, 194, 0.95);
+    border-radius: 30px;
+    background: rgba(255, 252, 245, 0.58);
+    box-shadow: 0 24px 70px -32px rgba(110, 70, 30, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 70px;
+  }
+  .leaf {
+    width: 122px;
+    height: 122px;
+    border-radius: 40px;
+    background: linear-gradient(150deg, rgba(224, 166, 62, 0.4), rgba(201, 111, 74, 0.16));
+    border: 2px solid rgba(201, 111, 74, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 66px;
+    line-height: 1;
+    margin-bottom: 22px;
+  }
+  h1 {
+    font-size: 104px;
+    font-weight: 700;
+    color: #a85533;
+    letter-spacing: 0.008em;
+    line-height: 1.02;
+  }
+  .tag {
+    margin-top: 16px;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6f5a48;
+    padding-left: 0.2em;
+  }
+  .row {
+    margin-top: 30px;
+    display: flex;
+    gap: 26px;
+    color: #9a8471;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .row span + span::before {
+    content: '·';
+    position: absolute;
+    margin-left: -17px;
+    color: #c9ab85;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="leaf" aria-hidden="true">🌱</div>
+    <h1>New Leaf</h1>
+    <div class="tag">a gentle place to grow</div>
+    <div class="row">
+      <span>Private</span>
+      <span>Ad-free</span>
+      <span>On your device</span>
+    </div>
+  </div>
+</body>
+</html>
