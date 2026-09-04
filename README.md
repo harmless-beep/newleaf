@@ -9,6 +9,20 @@ of the unknown — **one day at a time**.
 No accounts. No tracking. No ads. Everything (your habits, streaks, and
 journal) is stored only in your own browser, on your own device.
 
+## A look inside
+
+The screenshots below are the web app — the Android app wraps the exact
+same interface.
+
+| | |
+| --- | --- |
+| <p align="center"><img src="public/screenshots/today-morning.png" width="240" alt="Today: the gentle morning check-in"><br><em>Today — the morning ask</em></p> | <p align="center"><img src="public/screenshots/today-checked-in.png" width="240" alt="Today after a gentle check-in"><br><em>After a gentle check-in</em></p> |
+| <p align="center"><img src="public/screenshots/journey.png" width="240" alt="My journey: habits, streaks and the week strip"><br><em>My journey — habits, streaks, the week</em></p> | <p align="center"><img src="public/screenshots/urge-tools.png" width="240" alt="Urge tools: breathing, grounding, urge surfing, journal"><br><em>Urge tools — what to do in a hard moment</em></p> |
+
+Regenerate them anytime with
+`npm run build && npm run preview` then
+`node scripts/make-shots.mjs http://127.0.0.1:4173`.
+
 ## What's inside
 
 | Tab | What it does |
