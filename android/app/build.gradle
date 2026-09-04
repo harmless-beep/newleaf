@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace 'com.newleaf.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.newleaf.app"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file(keystoreProperties.getProperty('storeFile', 'newleaf-release.keystore'))
+            storePassword keystoreProperties.getProperty('storePassword', '')
+            keyAlias keystoreProperties.getProperty('keyAlias', 'newleaf')
+            keyPassword keystoreProperties.getProperty('keyPassword', '')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

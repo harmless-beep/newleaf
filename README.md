@@ -38,6 +38,27 @@ npm run build    # production build (output in dist/)
 npm run preview  # preview the production build
 ```
 
+## Android app
+
+New Leaf also ships as a native Android app — a small WebView wrapper
+that loads the same site from the app's own files, so it works fully
+offline with no INTERNET permission. Data stays on your device, same
+as the web version.
+
+- **Install the APK**: grab `NewLeaf-1.0.0.apk` from the repo root,
+  copy it to your phone, and open it (allow "install unknown apps"
+  when prompted). Requires Android 8.0+.
+- **Build it yourself**: `cd android && ./gradlew assembleRelease`
+  (needs the Android SDK and Java 17). The signed APK lands in
+  `android/app/build/outputs/apk/release/`.
+- The release keystore (`android/newleaf-release.keystore`) is **not**
+  committed — it lives only on this machine so you can sign future
+  updates. Keep it safe; the password is in `android/keystore.properties`.
+- The wrapper's warm details: sage status bar, cream splash with a leaf
+  mark, and a leaf launcher icon all match the site's palette.
+
+## Add your own content
+
 ## Add your own content
 
 - Habits & their copy: `src/data/habits.js`
