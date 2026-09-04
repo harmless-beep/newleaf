@@ -1013,6 +1013,49 @@ textarea.journal:focus {
   font-weight: 600;
 }
 
+/* ---------- monthly reflection (Journey) ---------- */
+
+.reflection {
+  background:
+    radial-gradient(420px 240px at 0% 0%, rgba(125, 156, 99, 0.12), transparent 60%),
+    linear-gradient(135deg, #fdf6ea, #f8e7cd);
+  border-color: #eed9b6;
+}
+
+.reflection h3 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+
+.reflect-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.reflect-list li {
+  position: relative;
+  padding: 6px 0 6px 24px;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.reflect-list li::before {
+  content: '✧';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  color: var(--accent);
+}
+
+.reflection .close {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.98rem;
+  color: var(--accent-deep);
+}
+
 /* ---------- small screen ---------- */
 
 @media (max-width: 560px) {

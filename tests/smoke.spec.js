@@ -86,6 +86,46 @@ test('a seeded 30-day streak celebrates the one-month milestone', async ({ page 
   await expect(page.locator('.habit-card .celebration')).toContainText(/Day 30/)
 })
 
+test('a seeded month of check-ins and a long run produce a gentle monthly reflection', async ({ page }) => {
+  const now = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  const prefix = `${now.getFullYear()}-${p(now.getMonth() + 1)}`
+  const monthName = now.toLocaleDateString(undefined, { month: 'long' })
+
+  // Seed one check-in per day available so far this month (Bright, plus one
+  // Heavy when the month is old enough) and a smoking run anchored 40 days
+  // ago, i.e. before this month started.
+  const past = []
+  for (let i = 0; i < 7; i++) {
+    const k = dateKeyAgo(i)
+    if (!k.startsWith(prefix)) break
+    past.push(k)
+  }
+  const seeded = {}
+  past.forEach((k, i) => {
+    seeded[k] = past.length >= 3 && i === 1 ? 'heavy' : 'bright'
+  })
+
+  await page.addInitScript(
+    ({ runs, checkins }) => {
+      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+      localStorage.setItem('nl.runs', JSON.stringify(runs))
+      localStorage.setItem('nl.checkins', JSON.stringify(checkins))
+    },
+    { runs: { smoking: { anchor: dateKeyAgo(40), best: 0 } }, checkins: seeded }
+  )
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  await expect(page.getByRole('heading', { name: new RegExp(`Your ${monthName}, gently`) })).toBeVisible()
+  await expect(page.getByText(/Bright was your most common feeling/)).toBeVisible()
+  await expect(page.getByText(new RegExp(`kept every day of ${monthName} so far`))).toBeVisible()
+  if (past.length >= 3) {
+    await expect(page.getByText(/Heavy days were part of this month/)).toBeVisible()
+  }
+})
+
 test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
   await page.goto('/')
 

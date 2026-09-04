@@ -2,12 +2,79 @@ import { useState } from 'react'
 import { HABIT_BY_ID, HABITS } from '../data/habits.js'
 const HABIT_IDS = HABITS.map((h) => h.id)
 import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
-import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
+import { addDaysKey, bestOf, dateKey, dayLabel, daysBetween, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function fmtAnchor(anchor) {
   const d = new Date(`${anchor}T00:00:00`)
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+// A gentle look back at the current month: checked-in moods beside the
+// days each path was kept. Because a run's anchor only moves on a slip,
+// every day from the anchor (or the month's start) to today really was
+// kept — the card only ever says what the record actually shows.
+function Reflection({ today, picks, runs, checkins }) {
+  const now = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const prefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`
+  const startKey = `${prefix}-01`
+  const monthName = now.toLocaleDateString(undefined, { month: 'long' })
+
+  const monthEntries = Object.entries(checkins).filter(([k]) => k.startsWith(prefix) && k <= today)
+  const counts = {}
+  for (const [, id] of monthEntries) {
+    if (MOOD_BY_ID[id]) counts[id] = (counts[id] || 0) + 1
+  }
+
+  const lines = []
+  if (monthEntries.length > 0) {
+    const [topId, topN] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+    const top = MOOD_BY_ID[topId]
+    const total = monthEntries.length
+    lines.push(
+      topN / total >= 0.45
+        ? `${top.emoji} ${top.name} was your most common feeling this month — on ${topN} of the ${total} day${total === 1 ? '' : 's'} you checked in.`
+        : `Your ${total} check-in${total === 1 ? '' : 's'} spread across moods; ${top.emoji} ${top.name.toLowerCase()} led with ${topN}.`
+    )
+    if (counts.heavy) {
+      lines.push('Heavy days were part of this month — and you kept choosing yourself through them. That counts for more than any streak.')
+    }
+    if (counts.restless) {
+      lines.push('Restless days rose too, and each one passed. You outlasted every wave.')
+    }
+  }
+
+  for (const id of picks) {
+    const run = runs[id]
+    if (!run || run.anchor > today) continue
+    const from = run.anchor > startKey ? run.anchor : startKey
+    const habit = HABIT_BY_ID[id]
+    lines.push(
+      from === startKey
+        ? `${habit.emoji} ${habit.name} — kept every day of ${monthName} so far.`
+        : `${habit.emoji} ${habit.name} — going strong for ${dayLabel(daysBetween(from, today) + 1)}, starting ${new Date(`${from}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}.`
+    )
+  }
+
+  if (lines.length === 0) return null
+
+  const closing = counts.heavy
+    ? 'A month with heavy days in it is still a month you lived through. Be proud of surviving it, and kind about the rest.'
+    : 'No month is the whole story. Whatever this one has held so far, it brought you here.'
+
+  return (
+    <section className="card reflection">
+      <div className="eyebrow">Reflection</div>
+      <h3>Your {monthName}, gently</h3>
+      <ul className="reflect-list">
+        {lines.map((l, i) => (
+          <li key={i}>{l}</li>
+        ))}
+      </ul>
+      <p className="close">{closing}</p>
+    </section>
+  )
 }
 
 export default function Journey({ picks, runs, checkins, addHabit, removeHabit, slipHabit }) {
@@ -42,6 +109,7 @@ export default function Journey({ picks, runs, checkins, addHabit, removeHabit, 
   if (picks.length === 0) {
     return (
       <div className="fade-in" style={{ marginTop: 26 }}>
+        <Reflection today={today} picks={picks} runs={runs} checkins={checkins} />
         <section className="card">
           <div className="eyebrow">Your journey</div>
           <h2>A path begins with a single step — choose yours</h2>
@@ -97,6 +165,8 @@ export default function Journey({ picks, runs, checkins, addHabit, removeHabit, 
           without a check-in
         </p>
       </section>
+
+      <Reflection today={today} picks={picks} runs={runs} checkins={checkins} />
 
       {picks.map((id) => {
         const habit = HABIT_BY_ID[id]
