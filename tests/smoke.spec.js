@@ -61,30 +61,36 @@ test('habits and streaks persist across a reload and between tabs', async ({ pag
   await expect(page.getByText(/best 1 day/)).toBeVisible()
 })
 
-test('a seeded 30-day streak celebrates the one-month milestone', async ({ page }) => {
-  // Anchor the run 29 days ago so today is day 30, then reload nothing — seed before load.
-  const anchor = dateKeyAgo(29)
-  await page.addInitScript(
-    ({ anchor }) => {
-      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
-      localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor, best: 0 } }))
-    },
-    { anchor }
-  )
+const TIER_CASES = [
+  { day: 7, label: 'one-week', text: 'One full week', next: 'Next: 10 days' },
+  { day: 30, label: 'one-month', text: 'One month', next: 'Next: 45 days' },
+  { day: 90, label: 'three-month', text: 'Three months', next: 'Next: 120 days' },
+  { day: 365, label: 'one-year', text: 'One full year', next: 'Beyond the milestones' },
+]
 
-  await page.goto('/')
-  // Today celebrates the one-month milestone.
-  await expect(page.getByText('Something to celebrate today')).toBeVisible()
-  await expect(page.getByText(/One month\. The person you were 30 days ago/)).toBeVisible()
-  await expect(page.getByText(/best 30 days/)).toBeVisible()
+// Each tier: a run anchored (day - 1) days ago makes today exactly that day.
+// The celebration must appear on Today and My journey, with the right next milestone.
+for (const c of TIER_CASES) {
+  test(`a seeded ${c.day}-day run celebrates its ${c.label} milestone`, async ({ page }) => {
+    const anchor = dateKeyAgo(c.day - 1)
+    await page.addInitScript(
+      ({ anchor }) => {
+        localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+        localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor, best: 0 } }))
+      },
+      { anchor }
+    )
 
-  // My journey shows the run, the milestone banner and the next milestone ahead.
-  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
-  await expect(page.locator('.habit-card .streak-big')).toHaveText(/30\s*days going strong/)
-  await expect(page.getByText(/your best: 30 days/)).toBeVisible()
-  await expect(page.getByText(/Next: 45 days/)).toBeVisible()
-  await expect(page.locator('.habit-card .celebration')).toContainText(/Day 30/)
-})
+    await page.goto('/')
+    await expect(page.getByText('Something to celebrate today')).toBeVisible()
+    await expect(page.getByText(new RegExp(c.text))).toBeVisible()
+
+    await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+    await expect(page.locator('.habit-card .streak-big')).toHaveText(new RegExp(`${c.day}\\s*days going strong`))
+    await expect(page.locator('.habit-card .celebration')).toContainText(new RegExp(`Day ${c.day}`))
+    await expect(page.getByText(new RegExp(c.next))).toBeVisible()
+  })
+}
 
 test('a seeded month of check-ins and a long run produce a gentle monthly reflection', async ({ page }) => {
   const now = new Date()
@@ -148,6 +154,35 @@ test('the journey strip expands into a full-month calendar view and back', async
   await page.getByRole('button', { name: /Back to this week/ }).click()
   await expect(page.getByText('Your last seven days')).toBeVisible()
   await expect(page.locator('.week-strip')).toBeVisible()
+})
+
+test('the week strip fills in past moods and kept days from real records', async ({ page }) => {
+  // A full week of distinct check-ins (oldest first) and a run anchored six
+  // days ago, so every one of the seven cells should show a mood and a ✓.
+  const moods = ['heavy', 'bright', 'steady', 'quiet', 'restless', 'steady', 'bright']
+  const checkins = {}
+  for (let i = 0; i < 7; i++) {
+    checkins[dateKeyAgo(6 - i)] = moods[i]
+  }
+  await page.addInitScript(
+    ({ runs, checkins }) => {
+      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+      localStorage.setItem('nl.runs', JSON.stringify(runs))
+      localStorage.setItem('nl.checkins', JSON.stringify(checkins))
+    },
+    { runs: { smoking: { anchor: dateKeyAgo(6), best: 0 } }, checkins }
+  )
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  const strip = page.locator('.week-strip')
+  await expect(strip.locator('.week-cell')).toHaveCount(7)
+  // All seven days were kept.
+  await expect(strip.locator('.week-cell .week-kept').filter({ hasText: '✓' })).toHaveCount(7)
+  // The cells carry each day's mood by name: oldest is Heavy, today is Bright.
+  await expect(strip.locator('.week-cell').nth(0)).toHaveAttribute('aria-label', /Heavy, all paths kept/)
+  await expect(strip.locator('.week-cell').nth(6)).toHaveAttribute('aria-label', /Bright, all paths kept/)
 })
 
 test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
