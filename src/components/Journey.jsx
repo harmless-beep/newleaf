@@ -11,19 +11,20 @@ function fmtAnchor(anchor) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-// A gentle look back at the current month: checked-in moods beside the
-// days each path was kept. Because a run's anchor only moves on a slip,
-// every day from the anchor (or the month's start) to today really was
-// kept — the card only ever says what the record actually shows.
-function Reflection({ today, picks, runs, checkins }) {
-  const now = new Date()
+// A gentle look back at one month (defaulting to the current one): checked-in
+// moods beside the days each path was kept. Because a run's anchor only moves
+// on a slip, days from the anchor (or the month's start) are genuinely kept —
+// and when a run began after a past month ended, the card says nothing about
+// that month rather than guessing.
+function Reflection({ today, picks, runs, checkins, monthKey, past }) {
   const pad = (n) => String(n).padStart(2, '0')
-  const prefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`
-  const startKey = `${prefix}-01`
-  const monthName = now.toLocaleDateString(undefined, { month: 'long' })
+  const [y, m] = monthKey.split('-').map(Number)
+  const startKey = `${monthKey}-01`
+  const endKey = `${monthKey}-${pad(new Date(y, m, 0).getDate())}`
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long' })
 
   // A day counts once: its morning mood, or its evening mood when only that exists.
-  const monthKeys = Object.keys(checkins).filter((k) => k.startsWith(prefix) && k <= today)
+  const monthKeys = Object.keys(checkins).filter((k) => k.startsWith(monthKey) && k <= today && k <= endKey)
   const counts = {}
   let heavyDays = 0
   let restlessDays = 0
@@ -39,41 +40,69 @@ function Reflection({ today, picks, runs, checkins }) {
     const [topId, topN] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
     const top = MOOD_BY_ID[topId]
     const total = monthKeys.length
+    const plural = total === 1 ? 'day' : 'days'
     lines.push(
-      topN / total >= 0.45
-        ? `${top.emoji} ${top.name} was your most common feeling this month — on ${topN} of the ${total} day${total === 1 ? '' : 's'} you checked in.`
-        : `Your ${total} check-in${total === 1 ? '' : 's'} spread across moods; ${top.emoji} ${top.name.toLowerCase()} led with ${topN}.`
+      past
+        ? topN / total >= 0.45
+          ? `In ${monthName}, ${top.emoji} ${top.name} was your most common feeling — on ${topN} of ${total} ${plural} you checked in.`
+          : `Your ${total} check-in${total === 1 ? '' : 's'} that month spread across moods; ${top.emoji} ${top.name.toLowerCase()} led with ${topN}.`
+        : topN / total >= 0.45
+          ? `${top.emoji} ${top.name} was your most common feeling this month — on ${topN} of the ${total} ${plural} you checked in.`
+          : `Your ${total} check-in${total === 1 ? '' : 's'} spread across moods; ${top.emoji} ${top.name.toLowerCase()} led with ${topN}.`
     )
     if (heavyDays > 0) {
-      lines.push('Heavy days were part of this month — and you kept choosing yourself through them. That counts for more than any streak.')
+      lines.push(
+        past
+          ? 'Heavy days were part of that month too — and you kept going. That counts for more than any streak.'
+          : 'Heavy days were part of this month — and you kept choosing yourself through them. That counts for more than any streak.'
+      )
     }
     if (restlessDays > 0) {
-      lines.push('Restless days rose too, and each one passed. You outlasted every wave.')
+      lines.push(
+        past
+          ? 'Restless days came and went that month — and each wave passed.'
+          : 'Restless days rose too, and each one passed. You outlasted every wave.'
+      )
     }
   }
 
   for (const id of picks) {
     const run = runs[id]
-    if (!run || run.anchor > today) continue
+    // A run that began after this month ended can't vouch for it — stay silent.
+    if (!run || run.anchor > today || run.anchor > endKey) continue
     const from = run.anchor > startKey ? run.anchor : startKey
     const habit = HABIT_BY_ID[id]
-    lines.push(
-      from === startKey
-        ? `${habit.emoji} ${habit.name} — kept every day of ${monthName} so far.`
-        : `${habit.emoji} ${habit.name} — going strong for ${dayLabel(daysBetween(from, today) + 1)}, starting ${new Date(`${from}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}.`
-    )
+    if (past) {
+      lines.push(
+        run.anchor <= startKey
+          ? `${habit.emoji} ${habit.name} — kept every day of ${monthName}.`
+          : `${habit.emoji} ${habit.name} — kept ${dayLabel(daysBetween(from, endKey) + 1)} that month, from ${fmtAnchor(from)}.`
+      )
+    } else {
+      lines.push(
+        run.anchor <= startKey
+          ? `${habit.emoji} ${habit.name} — kept every day of ${monthName} so far.`
+          : `${habit.emoji} ${habit.name} — going strong for ${dayLabel(daysBetween(from, today) + 1)}, starting ${fmtAnchor(from)}.`
+      )
+    }
   }
 
   if (lines.length === 0) return null
 
-  const closing = heavyDays > 0
-    ? 'A month with heavy days in it is still a month you lived through. Be proud of surviving it, and kind about the rest.'
-    : 'No month is the whole story. Whatever this one has held so far, it brought you here.'
+  const closing = past
+    ? heavyDays > 0
+      ? 'A month with heavy days in it is still a month you lived through. Be proud of surviving it, and kind about the rest.'
+      : `No single month is the whole story. ${monthName} held what it held — and it brought you here.`
+    : heavyDays > 0
+      ? 'A month with heavy days in it is still a month you lived through. Be proud of surviving it, and kind about the rest.'
+      : 'No month is the whole story. Whatever this one has held so far, it brought you here.'
 
   return (
     <section className="card reflection">
       <div className="eyebrow">Reflection</div>
-      <h3>Your {monthName}, gently</h3>
+      <h3>
+        Your {monthName}, {past ? 'looking back' : 'gently'}
+      </h3>
       <ul className="reflect-list">
         {lines.map((l, i) => (
           <li key={i}>{l}</li>
@@ -109,9 +138,10 @@ const keptMark = (kept, tracked) =>
     </span>
   )
 
-export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, addHabit, removeHabit, slipHabit }) {
+export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, addHabit, removeHabit, slipHabit }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
   const today = dateKey()
+  const currentPrefix = today.slice(0, 7)
 
   const pad = (n) => String(n).padStart(2, '0')
   const cellFor = (key) => dayCell(key, today, picks, runs, checkins)
@@ -137,16 +167,19 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
     }
   })
 
-  // This calendar month (Monday-first) for the expandable view.
-  const [year, monthNum] = today.split('-').map(Number)
-  const monthPrefix = `${year}-${pad(monthNum)}`
-  const monthName = new Date(year, monthNum - 1, 1).toLocaleDateString(undefined, { month: 'long' })
-  const lastDate = new Date(year, monthNum, 0).getDate()
-  const leadBlanks = (new Date(year, monthNum - 1, 1).getDay() + 6) % 7
+  // The calendar month on display (Monday-first), defaulting to the current
+  // one; the ‹ › controls step back through history and forward again.
+  const inMonthView = stripView === 'month'
+  const viewPrefix = inMonthView ? journeyMonth || currentPrefix : currentPrefix
+  const [vYear, vMonth] = viewPrefix.split('-').map(Number)
+  const viewName = new Date(vYear, vMonth - 1, 1).toLocaleDateString(undefined, { month: 'long' })
+  const viewPast = viewPrefix < currentPrefix
+  const viewLast = new Date(vYear, vMonth, 0).getDate()
+  const leadBlanks = (new Date(vYear, vMonth - 1, 1).getDay() + 6) % 7
   const month = []
   for (let b = 0; b < leadBlanks; b++) month.push({ blank: true })
-  for (let d = 1; d <= lastDate; d++) {
-    const key = `${monthPrefix}-${pad(d)}`
+  for (let d = 1; d <= viewLast; d++) {
+    const key = `${viewPrefix}-${pad(d)}`
     const c = cellFor(key)
     const dt = new Date(`${key}T00:00:00`)
     const future = key > today
@@ -158,14 +191,22 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
       mood: c.mood,
       kept: c.kept,
       tracked: c.tracked,
-      label: future ? `${monthName} ${d} — not here yet` : `${monthName} ${d}: ${describe(c)}`,
+      label: future ? `${viewName} ${d} — not here yet` : `${viewName} ${d}: ${describe(c)}`,
     })
+  }
+  const goMonth = (delta) => {
+    const d = new Date(vYear, vMonth - 1 + delta, 1)
+    setJourneyMonth(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`)
+  }
+  const backToWeek = () => {
+    setStripView('week')
+    setJourneyMonth(null)
   }
 
   if (picks.length === 0) {
     return (
       <div className="fade-in" style={{ marginTop: 26 }}>
-        <Reflection today={today} picks={picks} runs={runs} checkins={checkins} />
+        <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={currentPrefix} past={false} />
         <section className="card">
           <div className="eyebrow">Your journey</div>
           <h2>A path begins with a single step — choose yours</h2>
@@ -192,12 +233,12 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
       <section className="card">
         <div className="strip-head">
           <div className="eyebrow" style={{ marginBottom: 0 }}>
-            {stripView === 'week' ? 'Your last seven days' : `${monthName} at a glance`}
+            {stripView === 'week' ? 'Your last seven days' : `${viewName} at a glance`}
           </div>
           <button
             type="button"
             className="text-link"
-            onClick={() => setStripView(stripView === 'week' ? 'month' : 'week')}
+            onClick={() => (stripView === 'week' ? setStripView('month') : backToWeek())}
           >
             {stripView === 'week' ? 'See the whole month →' : '← Back to this week'}
           </button>
@@ -227,7 +268,29 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
           </>
         ) : (
           <>
-            <div className="month-grid" role="grid" aria-label={`${monthName} moods and kept habits`}>
+            <div className="month-nav" role="group" aria-label="Browse months">
+              <button
+                type="button"
+                className="text-link"
+                aria-label="Previous month"
+                onClick={() => goMonth(-1)}
+              >
+                ‹ {new Date(vYear, vMonth - 2, 1).toLocaleDateString(undefined, { month: 'short' })}
+              </button>
+              <span className="month-now">
+                {viewName} {vYear}
+              </span>
+              <button
+                type="button"
+                className="text-link"
+                aria-label="Next month"
+                disabled={!viewPast}
+                onClick={() => goMonth(1)}
+              >
+                {new Date(vYear, vMonth, 1).toLocaleDateString(undefined, { month: 'short' })} ›
+              </button>
+            </div>
+            <div className="month-grid" role="grid" aria-label={`${viewName} moods and kept habits`}>
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => (
                 <div key={w} className="month-head" role="columnheader">
                   {w}
@@ -260,7 +323,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
         )}
       </section>
 
-      <Reflection today={today} picks={picks} runs={runs} checkins={checkins} />
+      <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={viewPrefix} past={viewPast} />
 
       {picks.map((id) => {
         const habit = HABIT_BY_ID[id]

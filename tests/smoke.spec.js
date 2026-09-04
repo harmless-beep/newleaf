@@ -156,6 +156,41 @@ test('the journey strip expands into a full-month calendar view and back', async
   await expect(page.locator('.week-strip')).toBeVisible()
 })
 
+test('past months can be browsed, each with its own honest reflection', async ({ page }) => {
+  const now = new Date()
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevName = prev.toLocaleDateString(undefined, { month: 'long' })
+  const curName = now.toLocaleDateString(undefined, { month: 'long' })
+
+  // A run anchored ~3 months back so last month was fully kept.
+  await page.addInitScript(
+    ({ anchor }) => {
+      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+      localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor, best: 0 } }))
+    },
+    { anchor: dateKeyAgo(92) }
+  )
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+  await page.getByRole('button', { name: /See the whole month/ }).click()
+
+  // Starts on the current month; there is no future to browse into.
+  await expect(page.getByText(`${curName} at a glance`)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled()
+
+  // Step back: the calendar and its reflection follow into the past month.
+  await page.getByRole('button', { name: 'Previous month' }).click()
+  await expect(page.getByText(`${prevName} at a glance`)).toBeVisible()
+  await expect(page.getByRole('heading', { name: new RegExp(`Your ${prevName}, looking back`) })).toBeVisible()
+  await expect(page.getByText(new RegExp(`kept every day of ${prevName}\.`))).toBeVisible()
+
+  // Forward again to the present.
+  await page.getByRole('button', { name: 'Next month' }).click()
+  await expect(page.getByText(`${curName} at a glance`)).toBeVisible()
+  await expect(page.getByRole('heading', { name: new RegExp(`Your ${curName}, gently`) })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Next month' })).toBeDisabled()
+})
+
 test('the week strip fills in past moods and kept days from real records', async ({ page }) => {
   // A full week of distinct check-ins (oldest first) and a run anchored six
   // days ago, so every one of the seven cells should show a mood and a ✓.

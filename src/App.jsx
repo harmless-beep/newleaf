@@ -20,6 +20,7 @@ export default function App() {
   const [runs, setRuns] = usePersisted('nl.runs', {})
   const [checkins, setCheckins] = usePersisted('nl.checkins', {})
   const [stripView, setStripView] = useState('week')
+  const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -118,6 +119,8 @@ export default function App() {
             checkins={checkins}
             stripView={stripView}
             setStripView={setStripView}
+            journeyMonth={journeyMonth}
+            setJourneyMonth={setJourneyMonth}
             addHabit={addHabit}
             removeHabit={removeHabit}
             slipHabit={slipHabit}
