@@ -48,6 +48,12 @@ as the web version.
 - **Install the APK**: grab `NewLeaf-1.0.0.apk` from the repo root,
   copy it to your phone, and open it (allow "install unknown apps"
   when prompted). Requires Android 8.0+.
+- **Latest CI build**: every push to `main` rebuilds the app and
+  attaches a fresh APK to the rolling GitHub release **"New Leaf
+  Android — latest"** (see the Releases page) — useful when you're
+  away from this machine. Those APKs are debug-signed, so installing
+  over an older, differently-signed APK requires uninstalling first
+  (which clears the app's on-device data).
 - **Build it yourself**: `cd android && ./gradlew assembleRelease`
   (needs the Android SDK and Java 17). The signed APK lands in
   `android/app/build/outputs/apk/release/`.

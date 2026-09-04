@@ -1,0 +1,93 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build the site (fresh bundle for the app)
+        run: |
+          npm ci
+          npm run build
+
+      # The Android app bundles the built site under android/app/src/main/assets/www.
+      # Refresh it from this push's build so the APK always matches the repo head.
+      - name: Refresh bundled site assets
+        run: |
+          rm -rf android/app/src/main/assets/www
+          mkdir -p android/app/src/main/assets/www
+          cp -r dist/. android/app/src/main/assets/www/
+          ls android/app/src/main/assets/www
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages + accept licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" > /dev/null
+
+      - name: Build APK (CI debug-signed)
+        working-directory: android
+        run: |
+          ./gradlew assembleDebug --no-daemon
+          ls -la app/build/outputs/apk/debug/
+
+      - name: Stage APK artifact
+        run: |
+          mkdir -p dist-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist-apk/NewLeaf-latest.apk
+          ls -la dist-apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: newleaf-android-apk
+          path: dist-apk/NewLeaf-latest.apk
+          if-no-files-found: error
+
+      # A single rolling release keeps the newest APK attached, so the "latest"
+      # link stays stable across pushes.
+      - name: Attach APK to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="newleaf-latest"
+          RELEASE="New Leaf Android — latest"
+          # Remove any previous rolling release/tag so this one points at head.
+          gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag || true
+          git tag -f "$TAG" "${{ github.sha }}"
+          git push origin "$TAG" --force
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$RELEASE" \
+            --notes "Auto-built from commit ${{ github.sha }} on ${{ github.ref_name }}. Debug-signed for personal install; data resets on reinstall over an older signature." \
+            dist-apk/NewLeaf-latest.apk
+          echo "Release URL: $(gh release view "$TAG" --repo "${{ github.repository }}" --json url --jq .url)"
