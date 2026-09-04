@@ -3,7 +3,7 @@
 [![Deploy to GitHub Pages](https://github.com/harmless-beep/newleaf/actions/workflows/pages.yml/badge.svg)](https://github.com/harmless-beep/newleaf/actions/workflows/pages.yml) · [▶ Live site](https://harmless-beep.github.io/newleaf/)
 
 A warm, private, ad-free web app for people softening old habits —
-pornography, alcohol, smoking, lust, laziness, procrastination, and fear
+ alcohol, smoking, lust, laziness, procrastination, and fear
 of the unknown — **one day at a time**.
 
 No accounts. No tracking. No ads. Everything (your habits, streaks, and
