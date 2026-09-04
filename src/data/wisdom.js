@@ -102,6 +102,16 @@ export const EVENING_REPLY = {
   heavy: 'A heavy day is still a day you carried to the end. Rest — you made it through.',
 }
 
+// Wind-down lines for the quiet moment after the evening check-in.
+export const WIND_DOWN = [
+  'The day is done, and so are you. Let the tiredness be earned, not fought.',
+  'Nothing more is asked of you tonight. Rest is how tomorrow’s strength gets made.',
+  'Whatever today held, you carried it to the end. That is enough.',
+  'The night is yours — let the day’s noise fall away, one breath at a time.',
+  'You don’t have to solve tomorrow tonight. You only have to rest.',
+  'Be as kind to yourself in these last minutes as you’d be to someone you love.',
+]
+
 // Gentle notes shown above months of journal entries from the past.
 export const RETRO_NOTES = [
   'Something you wrote a while back. Read it with the same kindness you’d give a friend.',

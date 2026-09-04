@@ -311,6 +311,30 @@ test('a morning check-in can later be joined by an optional evening one', async 
   await expect(page.getByText(/Started steady/)).toBeVisible()
 })
 
+test('the evening check-in winds down gently and passes one small step to tomorrow', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 0, 15, 21, 30) })
+  await page.goto('/')
+
+  // Answer the evening ask.
+  await page.getByRole('button', { name: /Steady/ }).click()
+  await expect(page.getByRole('heading', { name: /Ending steady/ })).toBeVisible()
+
+  // A wind-down line appears, with the option to set tomorrow's small step.
+  const wind = page.locator('.wind-down')
+  await expect(wind).toBeVisible()
+  await expect(wind.locator('.wind-line')).not.toHaveText('')
+  await page.getByRole('textbox', { name: /one small step/ }).fill('a glass of water before the first coffee')
+  await page.getByRole('button', { name: 'Keep it for tomorrow' }).click()
+  await expect(page.getByText(/Tomorrow’s step is set/)).toBeVisible()
+
+  // The next morning greets the day with that small step.
+  await page.clock.fastForward(10.5 * 60 * 60 * 1000) // 21:30 -> 08:00 the next day
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'How are you feeling today?' })).toBeVisible()
+  await expect(page.getByText('Your one small step today')).toBeVisible()
+  await expect(page.getByText('a glass of water before the first coffee')).toBeVisible()
+})
+
 test('a slip resets the count gently and keeps the best streak', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /Pornography/ }).first().click()

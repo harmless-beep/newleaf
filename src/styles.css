@@ -289,6 +289,72 @@ button {
   color: var(--tint);
 }
 
+/* ---------- wind-down + one small step ---------- */
+
+.wind-down {
+  margin-top: 18px;
+  border-top: 1px dashed #eedcc2;
+  padding-top: 14px;
+}
+
+.wind-line {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--accent-deep);
+}
+
+.wind-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+
+.wind-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wind-row .step-input {
+  flex: 1;
+  min-width: 220px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 999px;
+  background: #fffdf8;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.93rem;
+  padding: 9px 16px;
+}
+
+.wind-row .step-input::placeholder {
+  color: var(--ink-3);
+}
+
+.wind-row .step-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 111, 74, 0.14);
+}
+
+.step-card {
+  background:
+    radial-gradient(360px 200px at 0% 100%, rgba(125, 156, 99, 0.14), transparent 65%),
+    linear-gradient(135deg, #f4f9ee, #edf3e2);
+  border-color: rgba(125, 156, 99, 0.5);
+}
+
+.step-card .step-promise {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--sage);
+}
+
 /* ---------- journey cards ---------- */
 
 .habit-card {

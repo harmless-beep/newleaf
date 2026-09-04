@@ -12,7 +12,7 @@ const TABS = [
   { id: 'tools', label: '🌊 Urge tools' },
 ]
 
-const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins']
+const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins', 'nl.steps']
 
 export default function App() {
   const [tab, setTab] = useState('today')
@@ -20,6 +20,7 @@ export default function App() {
   const [picks, setPicks] = usePersisted('nl.picks', [])
   const [runs, setRuns] = usePersisted('nl.runs', {})
   const [checkins, setCheckins] = usePersisted('nl.checkins', {})
+  const [steps, setSteps] = usePersisted('nl.steps', {}) // dateKey -> tomorrow's one small step
   const [stripView, setStripView] = useState('week')
   const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
   const [keepsake, setKeepsake] = useState(null) // 'YYYY-MM' while the keepsake preview is open
@@ -108,6 +109,8 @@ export default function App() {
             runs={runs}
             checkins={checkins}
             setCheckins={setCheckins}
+            steps={steps}
+            setSteps={setSteps}
             addHabit={addHabit}
             removeHabit={removeHabit}
             onGo={go}

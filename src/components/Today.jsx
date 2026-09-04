@@ -1,7 +1,8 @@
-import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID } from '../data/wisdom.js'
+import { useEffect, useState } from 'react'
+import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID, WIND_DOWN } from '../data/wisdom.js'
 import { HABIT_BY_ID } from '../data/habits.js'
 import { moodOf, setMood } from '../lib/checkins.js'
-import { bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
+import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function dailyIndex(key) {
@@ -41,13 +42,26 @@ function MoodButtons({ onPick, label }) {
 // One or two gentle check-ins per day: a morning ask (“how are you feeling?”)
 // and an optional evening one (“how did the day actually go?”) that shows once
 // the day is closing — especially when the morning one was skipped.
-function CheckIn({ checkins, setCheckins, dayKey }) {
+function CheckIn({ checkins, setCheckins, dayKey, steps = {}, setSteps = () => {} }) {
   const hour = new Date().getHours()
   const eveningTime = hour >= 19
   const morning = moodOf(checkins, dayKey, 'morning')
   const evening = moodOf(checkins, dayKey, 'evening')
   const morningMood = morning ? MOOD_BY_ID[morning] : null
   const eveningMood = evening ? MOOD_BY_ID[evening] : null
+  const tomorrowKey = addDaysKey(dayKey, 1)
+  const tomorrowStep = steps[tomorrowKey] || ''
+  const [draft, setDraft] = useState('')
+  useEffect(() => {
+    // If a step was set for tomorrow, show it so it can be changed tonight.
+    setDraft((d) => (tomorrowStep && d === '' ? tomorrowStep : d))
+  }, [tomorrowStep])
+  const windLine = WIND_DOWN[Number(dayKey.replaceAll('-', '')) % WIND_DOWN.length]
+  const saveStep = () => {
+    const trimmed = draft.trim()
+    if (!trimmed) return
+    setSteps({ ...steps, [tomorrowKey]: trimmed })
+  }
 
   // The evening ask — optional, un-pushy, shown once the day is closing.
   if (eveningTime && !evening) {
@@ -104,6 +118,40 @@ function CheckIn({ checkins, setCheckins, dayKey }) {
             )}
           </div>
         </div>
+
+        {eveningTime && (
+          <div className="wind-down">
+            <p className="wind-line">{windLine}</p>
+            <label className="wind-label" htmlFor="step-input">
+              Want to set one small step for tomorrow?
+            </label>
+            <div className="wind-row">
+              <input
+                id="step-input"
+                type="text"
+                maxLength={140}
+                className="step-input"
+                placeholder="e.g. two minutes of fresh air before the screen"
+                aria-label="Tomorrow’s one small step"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!draft.trim()}
+                onClick={saveStep}
+              >
+                {tomorrowStep ? 'Update step' : 'Keep it for tomorrow'}
+              </button>
+            </div>
+            {tomorrowStep && (
+              <p className="mute" style={{ margin: '8px 0 0' }}>
+                ✓ Tomorrow’s step is set — you can change it anytime tonight.
+              </p>
+            )}
+          </div>
+        )}
       </section>
     )
   }
@@ -128,7 +176,7 @@ function CheckIn({ checkins, setCheckins, dayKey }) {
   )
 }
 
-export default function Today({ picks, runs, checkins, setCheckins, addHabit, removeHabit, onGo }) {
+export default function Today({ picks, runs, checkins, setCheckins, steps = {}, setSteps = () => {}, addHabit, removeHabit, onGo }) {
   const greet = greeting()
   const key = dateKey()
 
@@ -160,7 +208,17 @@ export default function Today({ picks, runs, checkins, setCheckins, addHabit, re
         <p className="sub">{greet.note}</p>
       </section>
 
-      <CheckIn checkins={checkins} setCheckins={setCheckins} dayKey={key} />
+      <CheckIn checkins={checkins} setCheckins={setCheckins} dayKey={key} steps={steps} setSteps={setSteps} />
+
+      {steps[key] && (
+        <section className="card step-card">
+          <div className="eyebrow">Your one small step today</div>
+          <p className="step-promise">“{steps[key]}”</p>
+          <p className="mute" style={{ margin: 0 }}>
+            Set last night — one small thing is enough. However it goes, you already chose to care.
+          </p>
+        </section>
+      )}
 
       {celebrations.length > 0 && (
         <section className="card celebration" aria-live="polite">
