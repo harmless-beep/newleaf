@@ -4,6 +4,7 @@ import { addDaysKey, streakFor, todayKey } from './lib/streaks.js'
 import Today from './components/Today.jsx'
 import Journey from './components/Journey.jsx'
 import Tools from './components/Tools.jsx'
+import Keepsake from './components/Keepsake.jsx'
 
 const TABS = [
   { id: 'today', label: '🌤 Today' },
@@ -21,6 +22,7 @@ export default function App() {
   const [checkins, setCheckins] = usePersisted('nl.checkins', {})
   const [stripView, setStripView] = useState('week')
   const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
+  const [keepsake, setKeepsake] = useState(null) // 'YYYY-MM' while the keepsake preview is open
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -121,6 +123,7 @@ export default function App() {
             setStripView={setStripView}
             journeyMonth={journeyMonth}
             setJourneyMonth={setJourneyMonth}
+            onKeepsake={setKeepsake}
             addHabit={addHabit}
             removeHabit={removeHabit}
             slipHabit={slipHabit}
@@ -128,6 +131,8 @@ export default function App() {
         )}
         {tab === 'tools' && <Tools key="tools" seed={toolSeed} />}
       </main>
+
+      {keepsake && <Keepsake prefix={keepsake} onClose={() => setKeepsake(null)} />}
 
       <footer className="footer">
         <p className="care">

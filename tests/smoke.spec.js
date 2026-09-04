@@ -363,6 +363,43 @@ test('the journal archive groups months, searches, and looks back warmly', async
   await expect(page.getByText('A hard day, but I stayed with it.')).toBeVisible()
 })
 
+test('a month exports as a keepsake PDF with calendar, reflection and journal', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 0, 20, 9, 0) })
+  await page.addInitScript(() => {
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+    localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor: '2026-01-01', best: 0 } }))
+    localStorage.setItem(
+      'nl.checkins',
+      JSON.stringify({ '2026-01-20': { morning: 'bright', evening: 'heavy' }, '2026-01-19': 'steady' })
+    )
+    localStorage.setItem(
+      'nl.journal',
+      JSON.stringify([
+        { id: 'k1', at: '2026-01-15T08:00:00', text: 'A calm morning, a hard evening — I stayed anyway.' },
+        { id: 'k2', at: '2026-01-03T08:00:00', text: 'One small step at a time.' },
+      ])
+    )
+  })
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+  await page.getByRole('button', { name: /keepsake PDF/ }).click()
+
+  const sheet = page.locator('.keepsake')
+  await expect(sheet.locator('h1')).toHaveText('January 2026')
+  await expect(sheet.getByText('A gentle look back')).toBeVisible()
+  await expect(sheet.getByText(/kept every day of January so far/)).toBeVisible()
+  await expect(sheet.getByText('A calm morning, a hard evening — I stayed anyway.')).toBeVisible()
+  await expect(sheet.locator('.ks-grid td')).not.toHaveCount(0)
+
+  // The print stylesheet renders only the sheet, so Save-as-PDF yields a real file.
+  const pdf = await page.pdf({ path: 'test-results/keepsake-test.pdf' })
+  expect(pdf.slice(0, 5).toString()).toBe('%PDF-')
+
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.locator('.keepsake-layer')).toHaveCount(0)
+})
+
 test('urge tools: breathing, grounding, ride the wave and journal all work', async ({ page }) => {
   await page.goto('/')
   await mainNav(page).getByRole('button', { name: /Urge tools/ }).click()
