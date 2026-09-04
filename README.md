@@ -55,7 +55,10 @@ as the web version.
   committed — it lives only on this machine so you can sign future
   updates. Keep it safe; the password is in `android/keystore.properties`.
 - The wrapper's warm details: sage status bar, cream splash with a leaf
-  mark, and a leaf launcher icon all match the site's palette.
+  mark, and a hand-drawn leaf launcher icon (real PNGs at every mipmap
+  density — cream tile, transparent adaptive foreground, plus a round
+  variant) all match the site's palette. Regenerate them anytime with
+  `node scripts/make-icon.mjs`.
 
 ## Add your own content
 
