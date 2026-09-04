@@ -6,6 +6,14 @@ import { test, expect } from '@playwright/test'
 const mainNav = (page) => page.getByRole('navigation', { name: 'Main' })
 const toolTabs = (page) => page.getByRole('tablist', { name: 'Urge tools' })
 
+// Local calendar key for `daysAgo` days before today (mirrors src/lib/streaks.js).
+function dateKeyAgo(daysAgo) {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 test('home page loads with greeting, note of the day and tabs', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveTitle(/New Leaf/)
@@ -29,6 +37,53 @@ test('choosing a habit celebrates day one and shows in the overview', async ({ p
   await expect(page.getByText(/Day one — the bravest day of all/)).toBeVisible()
   await expect(page.getByText('Where you are right now')).toBeVisible()
   await expect(page.getByText(/best 1 day/)).toBeVisible()
+})
+
+test('habits and streaks persist across a reload and between tabs', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /Pornography/ }).first().click()
+  await expect(page.getByText('Something to celebrate today')).toBeVisible()
+  await expect(page.getByText(/best 1 day/)).toBeVisible()
+
+  // Reload: the pick and the run survive without re-choosing anything.
+  await page.reload()
+  await expect(page.getByText('Something to celebrate today')).toBeVisible()
+  await expect(page.getByText('Where you are right now')).toBeVisible()
+  await expect(page.getByText(/best 1 day/)).toBeVisible()
+
+  // The same run shows on My journey.
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+  await expect(page.locator('.habit-card .streak-big')).toHaveText(/1\s*day going strong/)
+  await expect(page.getByText(/your best: 1 day/)).toBeVisible()
+
+  // And it's still intact back on Today.
+  await mainNav(page).getByRole('button', { name: /Today/ }).click()
+  await expect(page.getByText(/best 1 day/)).toBeVisible()
+})
+
+test('a seeded 30-day streak celebrates the one-month milestone', async ({ page }) => {
+  // Anchor the run 29 days ago so today is day 30, then reload nothing — seed before load.
+  const anchor = dateKeyAgo(29)
+  await page.addInitScript(
+    ({ anchor }) => {
+      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+      localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor, best: 0 } }))
+    },
+    { anchor }
+  )
+
+  await page.goto('/')
+  // Today celebrates the one-month milestone.
+  await expect(page.getByText('Something to celebrate today')).toBeVisible()
+  await expect(page.getByText(/One month\. The person you were 30 days ago/)).toBeVisible()
+  await expect(page.getByText(/best 30 days/)).toBeVisible()
+
+  // My journey shows the run, the milestone banner and the next milestone ahead.
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+  await expect(page.locator('.habit-card .streak-big')).toHaveText(/30\s*days going strong/)
+  await expect(page.getByText(/your best: 30 days/)).toBeVisible()
+  await expect(page.getByText(/Next: 45 days/)).toBeVisible()
+  await expect(page.locator('.habit-card .celebration')).toContainText(/Day 30/)
 })
 
 test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
