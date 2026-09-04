@@ -68,6 +68,16 @@ as the web version.
   density — cream tile, transparent adaptive foreground, plus a round
   variant) all match the site's palette. Regenerate the icon anytime with
   `node scripts/make-icon.mjs`.
+- **Gentle evening reminder (optional, in-app only):** if the evening
+  check-in is left open, a quiet "Evening check-in" card on the Today
+  screen lets you ask for one soft nudge each day at a time you pick.
+  It's scheduled natively with `AlarmManager`, survives reboots, and
+  never nags: the alarm only posts a notification when that day's
+  evening check-in is still unanswered, then quietly re-arms for
+  tomorrow. Fully local — no network, and nothing leaves the device.
+  It fires on time when the system grants exact alarms; otherwise it
+  falls back to a near-time window (Android 13+ may need "Alarms &
+  reminders" special access enabled for the exact kind).
 
 ## Add your own content
 

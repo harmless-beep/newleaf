@@ -7,6 +7,7 @@ import Journey from './components/Journey.jsx'
 import Tools from './components/Tools.jsx'
 import Keepsake from './components/Keepsake.jsx'
 import CelebrateCard from './components/CelebrateCard.jsx'
+import ReminderCard from './components/ReminderCard.jsx'
 
 const TABS = [
   { id: 'today', label: '🌤 Today' },
@@ -14,7 +15,7 @@ const TABS = [
   { id: 'tools', label: '🌊 Urge tools' },
 ]
 
-const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins', 'nl.steps', 'nl.keepsakes']
+const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins', 'nl.steps', 'nl.keepsakes', 'nl.reminder']
 
 const readJournal = () => {
   try {
@@ -37,6 +38,7 @@ export default function App() {
   const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
   const [keepsake, setKeepsake] = useState(null) // 'YYYY-MM' while the keepsake preview is open
   const [celebrate, setCelebrate] = useState(null) // { kind: 'streak'|'month', ... } while a quiet card is open
+  const [reminder, setReminder] = usePersisted('nl.reminder', { enabled: false, hour: 20, minute: 0 })
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -167,6 +169,13 @@ export default function App() {
 
       {keepsake && <Keepsake prefix={keepsake} keepsakes={keepsakes} onClose={() => setKeepsake(null)} />}
       {celebrate && <CelebrateCard spec={celebrate} keepsakes={keepsakes} onClose={() => setCelebrate(null)} />}
+
+      <ReminderCard
+        enabled={reminder.enabled}
+        onEnabledChange={(enabled) => setReminder({ ...reminder, enabled })}
+        time={{ hour: reminder.hour, minute: reminder.minute }}
+        onTimeChange={({ hour, minute }) => setReminder({ ...reminder, hour, minute })}
+      />
 
       <footer className="footer">
         <p className="care">

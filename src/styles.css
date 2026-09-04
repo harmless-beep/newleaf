@@ -1274,6 +1274,39 @@ textarea.journal:focus {
   padding: 12px 18px;
 }
 
+/* ---------- gentle evening reminder (Android app) ---------- */
+
+.reminder-card {
+  background:
+    radial-gradient(360px 200px at 0% 100%, rgba(201, 111, 74, 0.08), transparent 60%),
+    linear-gradient(135deg, #fffaf1, #fbf0de);
+  border-style: dashed;
+  border-color: rgba(201, 111, 74, 0.35);
+}
+
+.reminder-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.reminder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reminder-times {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reminder-times .chip {
+  padding: 5px 12px;
+  font-size: 0.85rem;
+}
+
 /* ---------- morning check-in (Today) ---------- */
 
 .checkin {

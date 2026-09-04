@@ -3,6 +3,14 @@
 
     <!-- New Leaf is fully offline: no INTERNET permission, nothing leaves the device. -->
 
+    <!-- Gentle evening-check-in reminder (opt-in). POST_NOTIFICATIONS is only
+         needed on Android 13+, where the user grants it at enable time. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Lets the nudge land on time even in Doze. Denied by default on some
+         Android versions; the app gracefully falls back to a near-time window. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="true"
@@ -22,6 +30,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Shows the gentle reminder when its alarm fires. -->
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false" />
+
+        <!-- Re-schedules the reminder after a reboot so it is never lost. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

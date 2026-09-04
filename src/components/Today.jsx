@@ -3,7 +3,7 @@ import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID, WIND_DOWN } from '../data/wi
 import { HABIT_BY_ID } from '../data/habits.js'
 import { moodOf, setMood } from '../lib/checkins.js'
 import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
-import { nativeTick } from '../lib/native.js'
+import { nativeTick, noteCheckin } from '../lib/native.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function dailyIndex(key) {
@@ -58,6 +58,17 @@ function CheckIn({ checkins, setCheckins, dayKey, steps = {}, setSteps = () => {
   const evening = moodOf(checkins, dayKey, 'evening')
   const morningMood = morning ? MOOD_BY_ID[morning] : null
   const eveningMood = evening ? MOOD_BY_ID[evening] : null
+
+  // Tell the native reminder what happened, so its nudge stays honest: after an
+  // evening answer the alarm is cancelled, and a morning mood can personalise it.
+  const pickMorning = (id) => {
+    setCheckins(setMood(checkins, dayKey, 'morning', id))
+    noteCheckin('morning', MOOD_BY_ID[id].name)
+  }
+  const pickEvening = (id) => {
+    setCheckins(setMood(checkins, dayKey, 'evening', id))
+    noteCheckin('evening', '')
+  }
   const tomorrowKey = addDaysKey(dayKey, 1)
   const tomorrowStep = steps[tomorrowKey] || ''
   const [draft, setDraft] = useState('')
@@ -89,7 +100,7 @@ function CheckIn({ checkins, setCheckins, dayKey, steps = {}, setSteps = () => {
         <p className="mute" style={{ margin: '10px 0 0' }}>
           Optional — one tap, no pressure. Skip it and tomorrow starts fresh either way.
         </p>
-        <MoodButtons onPick={(id) => setCheckins(setMood(checkins, dayKey, 'evening', id))} label="Choose how your day went" />
+        <MoodButtons onPick={pickEvening} label="Choose how your day went" />
       </section>
     )
   }
@@ -103,7 +114,7 @@ function CheckIn({ checkins, setCheckins, dayKey, steps = {}, setSteps = () => {
         <p className="mute" style={{ margin: 0 }}>
           One tap. There’s no wrong answer — this is just a gentle way to notice yourself.
         </p>
-        <MoodButtons onPick={(id) => setCheckins(setMood(checkins, dayKey, 'morning', id))} label="Choose how you feel" />
+        <MoodButtons onPick={pickMorning} label="Choose how you feel" />
       </section>
     )
   }
