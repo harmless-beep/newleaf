@@ -26,13 +26,16 @@ function readAll() {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function Keepsake({ prefix, onClose }) {
+export default function Keepsake({ prefix, keepsakes = {}, onClose }) {
   const [{ picks, runs, checkins, journal }] = useState(readAll)
   const pad = (n) => String(n).padStart(2, '0')
   const today = dateKey()
   const [y, m] = prefix.split('-').map(Number)
   const monthName = new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long' })
   const past = prefix < today.slice(0, 7)
+  // A closed month that was preserved as a keepsake prints its frozen record
+  // (taken the day the month ended), so a later slip never erases its truth.
+  const snap = past && keepsakes[prefix] ? keepsakes[prefix] : null
 
   // Calendar cells for the month (same honest rules as the Journey grid).
   const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7
@@ -41,6 +44,20 @@ export default function Keepsake({ prefix, onClose }) {
   for (let b = 0; b < lead; b++) cells.push(null)
   for (let d = 1; d <= last; d++) {
     const key = `${prefix}-${pad(d)}`
+    if (snap) {
+      const day = snap.days[d - 1]
+      if (!day) {
+        cells.push({ date: d, future: true, mood: null, mark: '' })
+        continue
+      }
+      cells.push({
+        date: d,
+        future: false,
+        mood: day.moodId ? MOOD_BY_ID[day.moodId] : null,
+        mark: day.tracked === 0 ? '—' : day.kept === day.tracked ? '✓' : `${day.kept}/${day.tracked}`,
+      })
+      continue
+    }
     const future = key > today
     if (future) {
       cells.push({ date: d, future, mood: null, mark: '' })
@@ -60,7 +77,7 @@ export default function Keepsake({ prefix, onClose }) {
     })
   }
 
-  const ref = reflectionText({ today, picks, runs, checkins, monthKey: prefix, past })
+  const ref = snap || reflectionText({ today, picks, runs, checkins, monthKey: prefix, past })
   const monthJournal = journal.filter((e) => {
     const d = new Date(e.at)
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}` === prefix

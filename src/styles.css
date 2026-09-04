@@ -1547,6 +1547,57 @@ textarea.journal:focus {
   color: var(--accent-deep);
 }
 
+/* ---------- keepsakes shelf (Journey) ---------- */
+
+.shelf-card {
+  background:
+    radial-gradient(360px 200px at 100% 100%, rgba(201, 111, 74, 0.08), transparent 60%),
+    linear-gradient(135deg, #fffaf1, #fbf0de);
+}
+
+.shelf-card h3 {
+  margin: 0 0 2px;
+  font-size: 1.2rem;
+}
+
+.shelf-row {
+  border-top: 1px dashed #eedcc2;
+  padding: 12px 0 8px;
+  margin-top: 10px;
+}
+
+.shelf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shelf-head strong {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  color: var(--accent-deep);
+}
+
+.shelf-actions {
+  display: inline-flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.shelf-line {
+  margin: 3px 0 0;
+}
+
+.shelf-line.journal {
+  font-style: italic;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 /* ---------- small screen ---------- */
 
 @media (max-width: 560px) {

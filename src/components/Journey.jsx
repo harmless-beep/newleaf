@@ -5,6 +5,7 @@ import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
 import { addDaysKey, bestOf, dateKey, dayLabel, daysBetween, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
 import { dayMood } from '../lib/checkins.js'
 import { reflectionText } from '../lib/reflection.js'
+import { monthLabel } from '../lib/keepsakes.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function fmtAnchor(anchor) {
@@ -13,10 +14,13 @@ function fmtAnchor(anchor) {
 }
 
 // The reflection card for one month; all the wording lives in
-// lib/reflection.js so the keepsake export shows the exact same words.
-function Reflection({ today, picks, runs, checkins, monthKey, past }) {
-  const { title, lines, closing } = reflectionText({ today, picks, runs, checkins, monthKey, past })
-  if (lines.length === 0) return null
+// lib/reflection.js so the keepsake export shows the exact same words. When a
+// closed month has a frozen keepsake (`snap`), the card shows those exact
+// words instead of recomputing — a later slip must never rewrite the past.
+function Reflection({ today, picks, runs, checkins, monthKey, past, snap }) {
+  const ref = snap || reflectionText({ today, picks, runs, checkins, monthKey, past })
+  const { title, lines, closing } = ref
+  if (!lines || lines.length === 0) return null
   return (
     <section className="card reflection">
       <div className="eyebrow">Reflection</div>
@@ -56,7 +60,74 @@ const keptMark = (kept, tracked) =>
     </span>
   )
 
-export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, addHabit, removeHabit, slipHabit, onKeepsake = () => {}, onCelebrate = () => {} }) {
+// The keepsakes shelf: every closed recorded month, frozen the moment it
+// ended. Rows lead with the month, its most-felt mood, what the paths kept,
+// and a journal excerpt — then open the month's frozen view or its PDF.
+function KeepsakesShelf({ keepsakes, today, canBrowse, onOpen, onPdf }) {
+  const rows = Object.keys(keepsakes)
+    .filter((p) => p < today.slice(0, 7))
+    .sort()
+    .reverse()
+  if (rows.length === 0) return null
+  const fmtShort = (key) =>
+    new Date(`${key}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return (
+    <section className="card shelf-card" aria-label="Keepsakes — closed months kept for you">
+      <div className="eyebrow">Keepsakes</div>
+      <h3>Months, kept safe for you</h3>
+      <p className="mute" style={{ margin: '2px 0 0' }}>
+        Each closed month is saved quietly on this device the moment it ends — later slips and fresh starts never
+        rewrite it.
+      </p>
+      {rows.map((prefix) => {
+        const s = keepsakes[prefix]
+        const moodLine =
+          s.daysChecked === 0
+            ? 'no check-ins recorded that month'
+            : s.topMood
+              ? `${s.topMood.emoji} ${s.topMood.name} was your most common feeling — on ${s.topMood.count} of ${s.daysChecked} ${s.daysChecked === 1 ? 'day' : 'days'} you checked in.`
+              : 'your moods were recorded that month.'
+        const habitLine = s.habits.length
+          ? s.habits
+              .map((h) =>
+                h.wholeMonth
+                  ? `${h.emoji} kept every day`
+                  : h.keptDays === 1
+                    ? `${h.emoji} kept 1 day`
+                    : `${h.emoji} kept ${h.keptDays} days, from ${fmtShort(h.from)}`
+              )
+              .join(' · ')
+          : null
+        const journalLine =
+          s.journalCount > 0
+            ? `✍️ ${s.journalCount} journal ${s.journalCount === 1 ? 'entry' : 'entries'}${s.excerpt ? ` · “${s.excerpt.text}”` : ''}`
+            : null
+        return (
+          <div key={prefix} className="shelf-row">
+            <div className="shelf-head">
+              <strong>{monthLabel(prefix)}</strong>
+              <span className="shelf-actions">
+                {canBrowse && (
+                  <button type="button" className="text-link" onClick={() => onOpen(prefix)}>
+                    Open month →
+                  </button>
+                )}
+                <button type="button" className="text-link" onClick={() => onPdf(prefix)}>
+                  Save as PDF
+                </button>
+              </span>
+            </div>
+            <p className="shelf-line mute">{moodLine}</p>
+            {habitLine && <p className="shelf-line mute">{habitLine}</p>}
+            {journalLine && <p className="shelf-line mute journal">{journalLine}</p>}
+          </div>
+        )
+      })}
+    </section>
+  )
+}
+
+export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, keepsakes = {}, addHabit, removeHabit, slipHabit, onKeepsake = () => {}, onCelebrate = () => {} }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
   const today = dateKey()
   const currentPrefix = today.slice(0, 7)
@@ -94,22 +165,36 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
   const viewPast = viewPrefix < currentPrefix
   const viewLast = new Date(vYear, vMonth, 0).getDate()
   const leadBlanks = (new Date(vYear, vMonth - 1, 1).getDay() + 6) % 7
+  // A browsed-back month that has a frozen keepsake renders its frozen record
+  // (the snapshot is taken when the month closes, before later slips could
+  // silence its claims); anything else computes live from the current state.
+  const snap = viewPast && keepsakes[viewPrefix] ? keepsakes[viewPrefix] : null
   const month = []
   for (let b = 0; b < leadBlanks; b++) month.push({ blank: true })
   for (let d = 1; d <= viewLast; d++) {
     const key = `${viewPrefix}-${pad(d)}`
-    const c = cellFor(key)
     const dt = new Date(`${key}T00:00:00`)
-    const future = key > today
+    const weekend = dt.getDay() === 0 || dt.getDay() === 6
+    let c = null
+    let future = false
+    if (snap) {
+      const day = snap.days[d - 1]
+      if (day) {
+        c = { mood: day.moodId ? MOOD_BY_ID[day.moodId] : null, kept: day.kept, tracked: day.tracked }
+      }
+    } else {
+      c = cellFor(key)
+      future = key > today
+    }
     month.push({
       key,
       date: d,
       future,
-      weekend: dt.getDay() === 0 || dt.getDay() === 6,
-      mood: c.mood,
-      kept: c.kept,
-      tracked: c.tracked,
-      label: future ? `${viewName} ${d} — not here yet` : `${viewName} ${d}: ${describe(c)}`,
+      weekend,
+      mood: c ? c.mood : null,
+      kept: c ? c.kept : 0,
+      tracked: c ? c.tracked : 0,
+      label: future ? `${viewName} ${d} — not here yet` : `${viewName} ${d}: ${describe(c || {})}`,
     })
   }
   const goMonth = (delta) => {
@@ -125,6 +210,13 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
     return (
       <div className="fade-in" style={{ marginTop: 26 }}>
         <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={currentPrefix} past={false} />
+        <KeepsakesShelf
+          keepsakes={keepsakes}
+          today={today}
+          canBrowse={false}
+          onOpen={() => {}}
+          onPdf={(prefix) => onKeepsake(prefix)}
+        />
         <section className="card">
           <div className="eyebrow">Your journey</div>
           <h2>A path begins with a single step — choose yours</h2>
@@ -251,7 +343,18 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
         </p>
       </section>
 
-      <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={viewPrefix} past={viewPast} />
+      <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={viewPrefix} past={viewPast} snap={snap} />
+
+      <KeepsakesShelf
+        keepsakes={keepsakes}
+        today={today}
+        canBrowse
+        onOpen={(prefix) => {
+          setJourneyMonth(prefix)
+          setStripView('month')
+        }}
+        onPdf={(prefix) => onKeepsake(prefix)}
+      />
 
       {picks.map((id) => {
         const habit = HABIT_BY_ID[id]

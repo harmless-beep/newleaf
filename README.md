@@ -14,7 +14,7 @@ journal) is stored only in your own browser, on your own device.
 | Tab | What it does |
 | --- | --- |
 | **🌤 Today** | Daily check-ins: a gentle morning ask ("how are you feeling?") plus an optional evening one ("how did today actually go?") that appears once the day is closing — especially if the morning went unanswered. Answering it ends with a quiet wind-down line and the option to set tomorrow's one small step, which greets you the next morning. Time-aware greeting, a gentle "note for today", milestone celebrations, an at-a-glance view of your streaks, and quick links into the urge tools. |
-| **🌱 My journey** | Choose the habits you want to soften. Each gets a card with days-going-strong, your best run, progress to the next milestone, an affirmation, and small steps that help. "I slipped today" resets gently — your best is always kept. A strip of your last seven days shows each day's mood beside how your paths went (expandable to a full-month calendar you can browse back through history), and each month gets its own gentle reflection — the current one as it unfolds, past ones in honest hindsight. Any month can be saved as a keepsake PDF straight from your device, and any habit's run or any month can be drawn into a quiet celebration card (PNG) to download or share — made on-device, nothing uploaded. |
+| **🌱 My journey** | Choose the habits you want to soften. Each gets a card with days-going-strong, your best run, progress to the next milestone, an affirmation, and small steps that help. "I slipped today" resets gently — your best is always kept. A strip of your last seven days shows each day's mood beside how your paths went (expandable to a full-month calendar you can browse back through history), and each month gets its own gentle reflection — the current one as it unfolds, past ones in honest hindsight. Every closed month is preserved automatically as a keepsake the moment it ends (a "Keepsakes" shelf pages back through them, and a later slip never rewrites what a closed month truly was). Any month can be saved as a keepsake PDF straight from your device, and any habit's run or any month can be drawn into a quiet celebration card (PNG) to download or share — made on-device, nothing uploaded. |
 | **🌊 Urge tools** | Four small, real things to do in a hard moment: breathing (4-7-8 or box), the 5-4-3-2-1 grounding walk, "ride the wave" (a timed urge-surfing timer), and a private journal with a searchable, month-grouped archive that looks back on old entries kindly. |
 
 ## Design notes
@@ -47,5 +47,6 @@ npm run preview  # preview the production build
 ## Privacy
 
 No code in this project ever sends your data anywhere. Data lives in
-`localStorage` under the keys `nl.picks`, `nl.runs`, `nl.journal`, `nl.checkins` and `nl.steps`,
+`localStorage` under the keys `nl.picks`, `nl.runs`, `nl.journal`, `nl.checkins`, `nl.steps`
+and `nl.keepsakes` (a frozen copy of each closed month),
 and can be wiped with the "Reset my data" link in the footer.

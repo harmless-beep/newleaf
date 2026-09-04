@@ -44,7 +44,7 @@ function buildStreak(spec, today, runs) {
   }
 }
 
-function buildMonth(spec, today, { picks, runs, checkins, journal }) {
+function buildMonth(spec, today, { picks, runs, checkins, journal }, snap) {
   const prefix = spec.month
   const pad = (n) => String(n).padStart(2, '0')
   const [y, m] = prefix.split('-').map(Number)
@@ -52,41 +52,55 @@ function buildMonth(spec, today, { picks, runs, checkins, journal }) {
   const monthLength = new Date(y, m, 0).getDate()
   const daysElapsed = prefix === today.slice(0, 7) ? Number(today.slice(8, 10)) : monthLength
 
-  let checked = 0
-  let allKept = 0
-  const counts = {}
-  for (let d = 1; d <= daysElapsed; d++) {
-    const key = `${prefix}-${pad(d)}`
-    if (key > today) break
-    const mid = dayMood(checkins, key)
-    if (mid && MOOD_BY_ID[mid]) {
-      counts[mid] = (counts[mid] || 0) + 1
-      checked += 1
+  // A closed month preserved as a keepsake celebrates its frozen numbers —
+  // what the month truly was, not what later slips leave of it.
+  let checked
+  let allKept
+  let journalCount
+  let topMood
+  let closing
+  if (snap) {
+    checked = snap.daysChecked
+    allKept = snap.allKeptDays
+    journalCount = snap.journalCount
+    topMood = snap.topMood || null
+    closing = snap.closing || null
+  } else {
+    checked = 0
+    allKept = 0
+    const counts = {}
+    for (let d = 1; d <= daysElapsed; d++) {
+      const key = `${prefix}-${pad(d)}`
+      if (key > today) break
+      const mid = dayMood(checkins, key)
+      if (mid && MOOD_BY_ID[mid]) {
+        counts[mid] = (counts[mid] || 0) + 1
+        checked += 1
+      }
+      const tracked = picks.filter((id) => {
+        const run = runs[id]
+        return run && key >= run.anchor
+      })
+      if (tracked.length && tracked.every((id) => streakFor(runs[id], key) >= 1)) allKept += 1
     }
-    const tracked = picks.filter((id) => {
-      const run = runs[id]
-      return run && key >= run.anchor
-    })
-    if (tracked.length && tracked.every((id) => streakFor(runs[id], key) >= 1)) allKept += 1
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+    topMood = top ? MOOD_BY_ID[top[0]] : null
+    journalCount = journal.filter((e) => {
+      const d = new Date(e.at)
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}` === prefix
+    }).length
+    const ref = reflectionText({ today, picks, runs, checkins, monthKey: prefix, past: prefix < today.slice(0, 7) })
+    closing = ref.closing || null
   }
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
-  const topMood = top ? MOOD_BY_ID[top[0]] : null
-  const journalCount = journal.filter((e) => {
-    const d = new Date(e.at)
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}` === prefix
-  }).length
 
   const rows = []
   rows.push({ emoji: '🗓️', label: `${checked} of ${daysElapsed} day${daysElapsed === 1 ? '' : 's'} checked in` })
   if (topMood) rows.push({ emoji: topMood.emoji, label: `${topMood.name} was the most felt mood` })
-  if (picks.length && allKept > 0) {
+  if (allKept > 0) {
     rows.push({ emoji: '🌿', label: `${allKept} day${allKept === 1 ? '' : 's'} with every path kept` })
   }
   if (journalCount > 0) rows.push({ emoji: '✍️', label: `${journalCount} journal entr${journalCount === 1 ? 'y' : 'ies'} written` })
   if (!rows.length) rows.push({ emoji: '🌱', label: 'a quiet month — the record starts now' })
-
-  const ref = reflectionText({ today, picks, runs, checkins, monthKey: prefix, past: prefix < today.slice(0, 7) })
-  const closing = ref.closing || null
 
   return {
     canvas: { monthName, rows, closing },
@@ -95,11 +109,18 @@ function buildMonth(spec, today, { picks, runs, checkins, journal }) {
   }
 }
 
-export default function CelebrateCard({ spec, onClose }) {
+export default function CelebrateCard({ spec, keepsakes = {}, onClose }) {
   const canvasRef = useRef(null)
   const [{ picks, runs, checkins, journal }] = useState(readAll)
   const today = dateKey()
-  const data = spec.kind === 'streak' ? buildStreak(spec, today, runs) : buildMonth(spec, today, { picks, runs, checkins, journal })
+  const pastSnap =
+    spec.kind === 'month' && spec.month < today.slice(0, 7) && keepsakes[spec.month]
+      ? keepsakes[spec.month]
+      : null
+  const data =
+    spec.kind === 'streak'
+      ? buildStreak(spec, today, runs)
+      : buildMonth(spec, today, { picks, runs, checkins, journal }, pastSnap)
 
   useEffect(() => {
     const canvas = canvasRef.current

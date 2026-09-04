@@ -468,6 +468,103 @@ test('any month can be drawn into a quiet celebration card', async ({ page }) =>
   await expect(page.locator('.card-layer')).toHaveCount(0)
 })
 
+test('closed months are preserved automatically as keepsakes and listed on My journey', async ({ page }) => {
+  // Mid-February: January is closed and gets frozen on first load; the live
+  // month (February) must never be frozen mid-flight.
+  await page.clock.install({ time: new Date(2026, 1, 10, 9, 0) })
+  await page.addInitScript(() => {
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+    localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor: '2026-01-01', best: 0 } }))
+    localStorage.setItem(
+      'nl.checkins',
+      JSON.stringify({ '2026-01-05': 'bright', '2026-01-06': 'bright', '2026-01-07': 'heavy' })
+    )
+    localStorage.setItem(
+      'nl.journal',
+      JSON.stringify([{ id: 'm1', at: '2026-01-12T08:00:00', text: 'Two weeks in — quieter mind.' }])
+    )
+  })
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  // The shelf holds January with its frozen summary: mood, kept paths, journal.
+  const shelf = page.locator('.shelf-card')
+  await expect(shelf.getByText('January 2026', { exact: true })).toBeVisible()
+  await expect(
+    shelf.getByText(/Bright was your most common feeling — on 2 of 3 days you checked in\./)
+  ).toBeVisible()
+  await expect(shelf.getByText(/kept every day/)).toBeVisible()
+  await expect(shelf.getByText(/Two weeks in — quieter mind/)).toBeVisible()
+
+  // The snapshot was written to storage, and only the closed month was frozen.
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('nl.keepsakes')))
+  expect(Object.keys(saved)).toEqual(['2026-01'])
+  expect(saved['2026-01'].habits).toEqual([
+    expect.objectContaining({ emoji: '🌬', name: 'Smoking', wholeMonth: true }),
+  ])
+  expect(saved['2026-01'].excerpt.text).toBe('Two weeks in — quieter mind.')
+
+  // Opening the month shows its frozen record.
+  await shelf.getByRole('button', { name: 'Open month →' }).click()
+  await expect(page.getByText('January at a glance')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your January, looking back' })).toBeVisible()
+  await expect(page.getByText('kept every day of January.')).toBeVisible()
+})
+
+test('a keepsake month stays true even after a later slip would silence it', async ({ page }) => {
+  // A February slip moved the run's anchor past January, so live recomputation
+  // can no longer vouch for January at all — only the frozen keepsake can.
+  await page.clock.install({ time: new Date(2026, 1, 10, 9, 0) })
+  await page.addInitScript(() => {
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+    localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor: '2026-02-05', best: 31 } }))
+    localStorage.setItem('nl.checkins', JSON.stringify({ '2026-01-05': 'bright' }))
+    const days = []
+    for (let d = 1; d <= 31; d++) days.push({ d, moodId: d === 5 ? 'bright' : null, kept: 1, tracked: 1 })
+    localStorage.setItem(
+      'nl.keepsakes',
+      JSON.stringify({
+        '2026-01': {
+          prefix: '2026-01',
+          capturedAt: '2026-02-01',
+          title: 'Your January, looking back',
+          closing: 'A month with heavy days in it is still a month you lived through.',
+          lines: ['🌬 Smoking — kept every day of January.'],
+          days,
+          daysChecked: 1,
+          topMood: { id: 'bright', emoji: '☀️', name: 'Bright', count: 1 },
+          allKeptDays: 31,
+          habits: [{ emoji: '🌬', name: 'Smoking', wholeMonth: true, keptDays: 31, from: null }],
+          journalCount: 0,
+          excerpt: null,
+        },
+      })
+    )
+  })
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  // The shelf still holds the month even though today's run can't vouch for it.
+  const shelf = page.locator('.shelf-card')
+  await expect(shelf.getByText('January 2026', { exact: true })).toBeVisible()
+  await expect(shelf.getByText(/kept every day/)).toBeVisible()
+
+  // Opening it renders the frozen record: every January day still kept.
+  await shelf.getByRole('button', { name: 'Open month →' }).click()
+  await expect(page.getByText('January at a glance')).toBeVisible()
+  await expect(page.getByText('kept every day of January.')).toBeVisible()
+  await expect(page.locator('.month-cell .week-kept').filter({ hasText: '✓' })).toHaveCount(31)
+
+  // Exporting that month keeps the same truth as a PDF — no erased days.
+  await page.getByRole('button', { name: /keepsake PDF/ }).click()
+  const sheet = page.locator('.keepsake')
+  await expect(sheet.getByText('kept every day of January.')).toBeVisible()
+  await expect(sheet.locator('.ks-mark').filter({ hasText: '✓' })).toHaveCount(31)
+  await expect(sheet.locator('.ks-mark').filter({ hasText: '—' })).toHaveCount(0)
+})
+
 test('urge tools: breathing, grounding, ride the wave and journal all work', async ({ page }) => {
   await page.goto('/')
   await mainNav(page).getByRole('button', { name: /Urge tools/ }).click()

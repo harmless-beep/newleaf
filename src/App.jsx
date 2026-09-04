@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { usePersisted, clearAllData } from './lib/storage.js'
 import { addDaysKey, streakFor, todayKey } from './lib/streaks.js'
+import { captureMonth, missingSnapshots } from './lib/keepsakes.js'
 import Today from './components/Today.jsx'
 import Journey from './components/Journey.jsx'
 import Tools from './components/Tools.jsx'
@@ -13,7 +14,16 @@ const TABS = [
   { id: 'tools', label: '🌊 Urge tools' },
 ]
 
-const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins', 'nl.steps']
+const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins', 'nl.steps', 'nl.keepsakes']
+
+const readJournal = () => {
+  try {
+    const raw = localStorage.getItem('nl.journal')
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
 
 export default function App() {
   const [tab, setTab] = useState('today')
@@ -22,6 +32,7 @@ export default function App() {
   const [runs, setRuns] = usePersisted('nl.runs', {})
   const [checkins, setCheckins] = usePersisted('nl.checkins', {})
   const [steps, setSteps] = usePersisted('nl.steps', {}) // dateKey -> tomorrow's one small step
+  const [keepsakes, setKeepsakes] = usePersisted('nl.keepsakes', {}) // 'YYYY-MM' -> frozen closed-month snapshot
   const [stripView, setStripView] = useState('week')
   const [journeyMonth, setJourneyMonth] = useState(null) // 'YYYY-MM' while browsing past months
   const [keepsake, setKeepsake] = useState(null) // 'YYYY-MM' while the keepsake preview is open
@@ -47,6 +58,21 @@ export default function App() {
     if (next) setRuns(next)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picks, runs])
+
+  // Preserve closed months as keepsakes: the moment a month has ended (and on
+  // every later load, for any recorded month still missing one). Capturing is
+  // a one-time freeze per month — later slips and fresh starts never rewrite
+  // what a closed month truly was.
+  useEffect(() => {
+    const missing = missingSnapshots({ keepsakes, today, runs, checkins, journal: readJournal() })
+    if (missing.length === 0) return
+    const next = { ...keepsakes }
+    for (const prefix of missing) {
+      next[prefix] = captureMonth(prefix, { today, picks, runs, checkins, journal: readJournal() })
+    }
+    setKeepsakes(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picks, runs, checkins])
 
   const addHabit = (id) => {
     if (!picks.includes(id)) setPicks([...picks, id])
@@ -128,6 +154,7 @@ export default function App() {
             setStripView={setStripView}
             journeyMonth={journeyMonth}
             setJourneyMonth={setJourneyMonth}
+            keepsakes={keepsakes}
             onKeepsake={setKeepsake}
             onCelebrate={setCelebrate}
             addHabit={addHabit}
@@ -138,8 +165,8 @@ export default function App() {
         {tab === 'tools' && <Tools key="tools" seed={toolSeed} />}
       </main>
 
-      {keepsake && <Keepsake prefix={keepsake} onClose={() => setKeepsake(null)} />}
-      {celebrate && <CelebrateCard spec={celebrate} onClose={() => setCelebrate(null)} />}
+      {keepsake && <Keepsake prefix={keepsake} keepsakes={keepsakes} onClose={() => setKeepsake(null)} />}
+      {celebrate && <CelebrateCard spec={celebrate} keepsakes={keepsakes} onClose={() => setCelebrate(null)} />}
 
       <footer className="footer">
         <p className="care">
