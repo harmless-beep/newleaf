@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePersisted, uid } from '../lib/storage.js'
-import { BREATH_DONE, GROUND_DONE, RIDE_DONE, RIDE_LINES } from '../data/wisdom.js'
+import { BREATH_DONE, GROUND_DONE, RETRO_NOTES, RIDE_DONE, RIDE_LINES } from '../data/wisdom.js'
 
 /* ============================== breathing ============================== */
 
@@ -350,6 +350,7 @@ function RideWave() {
 function Journal() {
   const [entries, setEntries] = usePersisted('nl.journal', [])
   const [text, setText] = useState('')
+  const [q, setQ] = useState('')
 
   const save = () => {
     const trimmed = text.trim()
@@ -359,6 +360,19 @@ function Journal() {
   }
 
   const del = (id) => setEntries(entries.filter((e) => e.id !== id))
+
+  const query = q.trim().toLowerCase()
+  const shown = query ? entries.filter((e) => e.text.toLowerCase().includes(query)) : entries
+  // Group the shown entries by calendar month, newest first.
+  const groups = []
+  for (const e of shown) {
+    const d = new Date(e.at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const last = groups[groups.length - 1]
+    if (last && last.key === key) last.items.push(e)
+    else groups.push({ key, items: [e] })
+  }
+  const now = new Date()
 
   return (
     <>
@@ -388,22 +402,61 @@ function Journal() {
             Nothing here yet. When a feeling gets heavy, come back — a page that listens is a powerful thing.
           </div>
         ) : (
-          entries.map((e) => (
-            <div key={e.id} className="journal-entry">
-              <div className="when">
-                {new Date(e.at).toLocaleString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
+          <>
+            <input
+              type="search"
+              className="journal-search"
+              placeholder="Search past entries…"
+              aria-label="Search journal entries"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            {shown.length === 0 ? (
+              <div className="empty-note">
+                Nothing matches “{q.trim()}”. It may be hiding under different words — or simply resting somewhere else.
               </div>
-              <p>{e.text}</p>
-              <button type="button" className="del" aria-label="Delete entry" onClick={() => del(e.id)}>
-                ✕
-              </button>
-            </div>
-          ))
+            ) : (
+              groups.map((g) => {
+                const head = new Date(g.items[0].at)
+                const y = head.getFullYear()
+                const m = head.getMonth()
+                const label = head.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+                const monthsAgo = now.getFullYear() * 12 + now.getMonth() - (y * 12 + m)
+                const note = RETRO_NOTES[Math.abs(y * 12 + m) % RETRO_NOTES.length]
+                return (
+                  <div key={g.key} className="journal-month">
+                    <div className="month-head">
+                      <h4>{label}</h4>
+                      <span className="mute">
+                        {g.items.length} {g.items.length === 1 ? 'entry' : 'entries'}
+                      </span>
+                    </div>
+                    {monthsAgo > 0 && (
+                      <p className="retro-note">
+                        {note} · from {monthsAgo === 1 ? 'a month' : `${monthsAgo} months`} ago.
+                      </p>
+                    )}
+                    {g.items.map((e) => (
+                      <div key={e.id} className="journal-entry">
+                        <div className="when">
+                          {new Date(e.at).toLocaleString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                        <p>{e.text}</p>
+                        <button type="button" className="del" aria-label="Delete entry" onClick={() => del(e.id)}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })
+            )}
+          </>
         )}
       </div>
     </>

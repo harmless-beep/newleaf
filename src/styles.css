@@ -634,6 +634,61 @@ button {
   text-align: center;
 }
 
+/* journal archive */
+
+.journal-search {
+  width: 100%;
+  border: 1.5px solid var(--card-border);
+  border-radius: 999px;
+  background: #fffdf8;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.92rem;
+  padding: 9px 16px;
+  margin: 2px 0 14px;
+}
+
+.journal-search::placeholder {
+  color: var(--ink-3);
+}
+
+.journal-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 111, 74, 0.14);
+}
+
+.journal-month {
+  margin-bottom: 18px;
+}
+
+.journal-month .month-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.journal-month h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+}
+
+.retro-note {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ink-3);
+  background: rgba(224, 166, 62, 0.1);
+  border-left: 3px solid rgba(224, 166, 62, 0.5);
+  border-radius: 0 10px 10px 0;
+  padding: 8px 12px;
+}
+
 /* ride the wave */
 
 .ride-clock {

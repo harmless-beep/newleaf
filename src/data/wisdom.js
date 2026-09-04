@@ -102,6 +102,16 @@ export const EVENING_REPLY = {
   heavy: 'A heavy day is still a day you carried to the end. Rest — you made it through.',
 }
 
+// Gentle notes shown above months of journal entries from the past.
+export const RETRO_NOTES = [
+  'Something you wrote a while back. Read it with the same kindness you’d give a friend.',
+  'A note from a quieter season. Notice the strength in it, not just the struggle.',
+  'Time has passed since these words. Look how far you’ve come without even noticing.',
+  'Old entries are mirrors — they show how much has grown since then.',
+  'That version of you didn’t know the ending. You do — and it kept going.',
+  'Words from another weather system. You made it through to calmer skies.',
+]
+
 export const RIDE_DONE = 'You rode the wave all the way down. It passed — and you stayed. That was courage.'
 
 export const BREATH_DONE =

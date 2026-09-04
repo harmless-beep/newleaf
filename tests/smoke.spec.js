@@ -303,6 +303,43 @@ test('a slip resets the count gently and keeps the best streak', async ({ page }
   await expect(page.getByText(/your best: 1 day/)).toBeVisible()
 })
 
+test('the journal archive groups months, searches, and looks back warmly', async ({ page }) => {
+  // Fixed mid-January clock so the seeded August entries are five months back.
+  await page.clock.install({ time: new Date(2026, 0, 15, 9, 30) })
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'nl.journal',
+      JSON.stringify([
+        { id: 'j1', at: '2026-01-15T08:00:00', text: 'Today I felt calm for the first time in weeks.' },
+        { id: 'j2', at: '2025-08-15T08:00:00', text: 'A hard day, but I stayed with it.' },
+        { id: 'j3', at: '2025-08-02T08:00:00', text: 'Small steps, repeated, are unstoppable.' },
+      ])
+    )
+  })
+
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /Urge tools/ }).click()
+  await toolTabs(page).getByRole('tab', { name: /Write it out/ }).click()
+
+  // Months are grouped, with counts and a warm note on the old one.
+  await expect(page.getByRole('heading', { name: 'January 2026' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'August 2025' })).toBeVisible()
+  await expect(page.getByText(/from 5 months ago\./)).toBeVisible()
+  await expect(page.getByText('2 entries', { exact: true })).toBeVisible()
+
+  // Searching narrows to matching months only.
+  const search = page.getByRole('searchbox', { name: 'Search journal entries' })
+  await search.fill('calm')
+  await expect(page.getByText('Today I felt calm for the first time in weeks.')).toBeVisible()
+  await expect(page.getByText('A hard day, but I stayed with it.')).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'August 2025' })).not.toBeVisible()
+
+  // Clearing the search restores the full archive and its retrospection.
+  await search.fill('')
+  await expect(page.getByRole('heading', { name: 'August 2025' })).toBeVisible()
+  await expect(page.getByText('A hard day, but I stayed with it.')).toBeVisible()
+})
+
 test('urge tools: breathing, grounding, ride the wave and journal all work', async ({ page }) => {
   await page.goto('/')
   await mainNav(page).getByRole('button', { name: /Urge tools/ }).click()
