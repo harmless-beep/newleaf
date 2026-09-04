@@ -82,6 +82,17 @@ export const RIDE_LINES = [
   'This is not a battle. It is a visit — and the visit is ending.',
 ]
 
+// Morning check-in moods — what a day can feel like, none of it wrong.
+export const MOODS = [
+  { id: 'bright', emoji: '☀️', name: 'Bright', reply: 'Good — let today have some of that light. You deserve it.' },
+  { id: 'steady', emoji: '🌤', name: 'Steady', reply: 'Steady is strong. One solid, ordinary day is exactly enough.' },
+  { id: 'quiet', emoji: '🕊️', name: 'Quiet', reply: 'Quiet days count too. Rest is part of every real recovery.' },
+  { id: 'restless', emoji: '🌊', name: 'Restless', reply: 'Restless is honest. If an urge feels close, one small tool can carry you through the wave.' },
+  { id: 'heavy', emoji: '🌧️', name: 'Heavy', reply: 'Heavy days are real. Thank you for checking in — be extra gentle with yourself today.' },
+]
+
+export const MOOD_BY_ID = Object.fromEntries(MOODS.map((m) => [m.id, m]))
+
 export const RIDE_DONE = 'You rode the wave all the way down. It passed — and you stayed. That was courage.'
 
 export const BREATH_DONE =

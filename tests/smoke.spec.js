@@ -27,6 +27,31 @@ test('choosing a habit celebrates day one and shows in the overview', async ({ p
   await expect(page.getByText(/best 1 day/)).toBeVisible()
 })
 
+test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
+  await page.goto('/')
+
+  // No check-in yet — the mood picker is shown.
+  await expect(page.getByRole('heading', { name: 'How are you feeling today?' })).toBeVisible()
+  await page.getByRole('button', { name: /Steady/ }).click()
+
+  // Checked in — the picker gives way to a gentle confirmation.
+  await expect(page.getByRole('heading', { name: /Feeling steady/ })).toBeVisible()
+  await expect(page.getByText(/Steady is strong/)).toBeVisible()
+
+  // Reload: the check-in persists for the day.
+  await page.reload()
+  await expect(page.getByRole('heading', { name: /Feeling steady/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'How are you feeling today?' })).not.toBeVisible()
+
+  // Add a habit, then open My journey: today's cell shows the mood and a kept ✓.
+  await page.getByRole('button', { name: /Pornography/ }).first().click()
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+  const strip = page.locator('.week-strip')
+  await expect(strip).toBeVisible()
+  await expect(strip.getByText('🌤')).toBeVisible()
+  await expect(strip.getByText('✓', { exact: true })).toBeVisible()
+})
+
 test('a slip resets the count gently and keeps the best streak', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /Pornography/ }).first().click()

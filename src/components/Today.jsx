@@ -1,4 +1,4 @@
-import { DAILIES } from '../data/wisdom.js'
+import { DAILIES, MOODS, MOOD_BY_ID } from '../data/wisdom.js'
 import { HABIT_BY_ID } from '../data/habits.js'
 import { bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
 import HabitPicker from './HabitPicker.jsx'
@@ -24,7 +24,53 @@ const TOOLS = [
   { id: 'journal', label: '✍️ Write it out', when: 'something needs saying' },
 ]
 
-export default function Today({ picks, runs, addHabit, removeHabit, onGo }) {
+function CheckIn({ checkins, setCheckins, dayKey }) {
+  const moodId = checkins[dayKey]
+  if (moodId && MOOD_BY_ID[moodId]) {
+    const mood = MOOD_BY_ID[moodId]
+    return (
+      <section className="card checkin" aria-live="polite">
+        <div className="eyebrow">Morning check-in</div>
+        <div className="checkin-done">
+          <span className="big" aria-hidden="true">
+            {mood.emoji}
+          </span>
+          <div>
+            <h2>Feeling {mood.name.toLowerCase()} today</h2>
+            <p>{mood.reply}</p>
+          </div>
+        </div>
+        <p className="mute" style={{ margin: '12px 0 0' }}>
+          Thank you for checking in. Tomorrow is a new check-in — however you feel then is welcome too.
+        </p>
+      </section>
+    )
+  }
+  return (
+    <section className="card checkin">
+      <div className="eyebrow">Morning check-in</div>
+      <h2>How are you feeling today?</h2>
+      <p className="mute" style={{ margin: 0 }}>
+        One tap. There’s no wrong answer — this is just a gentle way to notice yourself.
+      </p>
+      <div className="mood-grid" role="group" aria-label="Choose how you feel today">
+        {MOODS.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            className="mood"
+            onClick={() => setCheckins({ ...checkins, [dayKey]: m.id })}
+          >
+            <span aria-hidden="true">{m.emoji}</span>
+            {m.name}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export default function Today({ picks, runs, checkins, setCheckins, addHabit, removeHabit, onGo }) {
   const greet = greeting()
   const key = dateKey()
 
@@ -55,6 +101,8 @@ export default function Today({ picks, runs, addHabit, removeHabit, onGo }) {
         </h1>
         <p className="sub">{greet.note}</p>
       </section>
+
+      <CheckIn checkins={checkins} setCheckins={setCheckins} dayKey={key} />
 
       {celebrations.length > 0 && (
         <section className="card celebration" aria-live="polite">

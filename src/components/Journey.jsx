@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { HABIT_BY_ID, HABITS } from '../data/habits.js'
 const HABIT_IDS = HABITS.map((h) => h.id)
-import { MILESTONE_BY_DAY } from '../data/wisdom.js'
-import { bestOf, dateKey, dayLabel, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
+import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
+import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function fmtAnchor(anchor) {
@@ -10,9 +10,34 @@ function fmtAnchor(anchor) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export default function Journey({ picks, runs, addHabit, removeHabit, slipHabit }) {
+export default function Journey({ picks, runs, checkins, addHabit, removeHabit, slipHabit }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
   const today = dateKey()
+
+  // The last seven days: each day's mood (if checked in) beside how many of
+  // that day's chosen paths were kept. Days before a habit began show as “—”.
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const key = addDaysKey(today, i - 6)
+    const d = new Date(`${key}T00:00:00`)
+    const tracked = picks.filter((id) => {
+      const run = runs[id]
+      return run && key >= run.anchor
+    })
+    const kept = tracked.filter((id) => streakFor(runs[id], key) >= 1).length
+    const mood = checkins[key] ? MOOD_BY_ID[checkins[key]] : null
+    const what = mood
+      ? `${mood.name}${tracked.length ? (kept === tracked.length ? ', all paths kept' : `, kept ${kept} of ${tracked.length}`) : ''}`
+      : 'no check-in'
+    return {
+      key,
+      day: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      date: d.getDate(),
+      mood,
+      kept,
+      tracked: tracked.length,
+      label: `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${what}`,
+    }
+  })
 
   if (picks.length === 0) {
     return (
@@ -37,6 +62,39 @@ export default function Journey({ picks, runs, addHabit, removeHabit, slipHabit 
         <p className="sub">
           This isn’t about perfection — it’s about showing up. Every card below is simply a record of your choosing,
           day by day.
+        </p>
+      </section>
+
+      <section className="card">
+        <div className="eyebrow">Your last seven days</div>
+        <p className="mute" style={{ margin: '-2px 0 0' }}>
+          How you felt each morning, beside how your paths went. Just a record — not a grade.
+        </p>
+        <div className="week-strip" role="list" aria-label="Last seven days of moods and kept habits">
+          {week.map((w) => (
+            <div key={w.key} className={`week-cell${w.key === today ? ' today' : ''}`} role="listitem" aria-label={w.label}>
+              <span className="week-day">{w.day}</span>
+              <span className="week-date">{w.date}</span>
+              <span className={`week-mood${w.mood ? '' : ' empty'}`} aria-hidden="true">
+                {w.mood ? w.mood.emoji : '·'}
+              </span>
+              <span className="week-kept">
+                {w.tracked === 0 ? (
+                  <span className="miss">—</span>
+                ) : w.kept === w.tracked ? (
+                  '✓'
+                ) : (
+                  <span className="miss">
+                    {w.kept}/{w.tracked}
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mute" style={{ margin: '10px 0 0' }}>
+          <b>✓</b> every path kept · like <b>2/3</b> some kept · <b>—</b> hadn’t begun yet · a dim dot is a day
+          without a check-in
         </p>
       </section>
 

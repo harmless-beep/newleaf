@@ -11,13 +11,14 @@ const TABS = [
   { id: 'tools', label: '🌊 Urge tools' },
 ]
 
-const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal']
+const ALL_KEYS = ['nl.picks', 'nl.runs', 'nl.journal', 'nl.checkins']
 
 export default function App() {
   const [tab, setTab] = useState('today')
   const [toolSeed, setToolSeed] = useState(null)
   const [picks, setPicks] = usePersisted('nl.picks', [])
   const [runs, setRuns] = usePersisted('nl.runs', {})
+  const [checkins, setCheckins] = usePersisted('nl.checkins', {})
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -101,6 +102,8 @@ export default function App() {
             key="today"
             picks={picks}
             runs={runs}
+            checkins={checkins}
+            setCheckins={setCheckins}
             addHabit={addHabit}
             removeHabit={removeHabit}
             onGo={go}
@@ -111,6 +114,7 @@ export default function App() {
             key="journey"
             picks={picks}
             runs={runs}
+            checkins={checkins}
             addHabit={addHabit}
             removeHabit={removeHabit}
             slipHabit={slipHabit}
