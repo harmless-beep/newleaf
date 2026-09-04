@@ -212,19 +212,45 @@ test('morning check-in records a mood that survives a reload and shows in the jo
   await expect(strip.getByText('✓', { exact: true })).toBeVisible()
 })
 
-test('an unanswered check-in gets a soft end-of-day nudge, not a demand', async ({ page }) => {
-  // Late evening, still no check-in for the day.
+test('a skipped morning check-in is caught by a gentle optional evening check-in', async ({ page }) => {
+  // Late evening, the morning ask never answered.
   await page.clock.install({ time: new Date(2026, 0, 15, 21, 0) })
   await page.goto('/')
 
-  await expect(page.getByText('Before the day closes')).toBeVisible()
-  await expect(page.getByRole('heading', { name: /No check-in today/ })).toBeVisible()
+  await expect(page.getByText('Evening check-in')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Morning slipped by/ })).toBeVisible()
   await expect(page.getByText(/no pressure/)).toBeVisible()
+  // The morning ask itself no longer nags at night.
+  await expect(page.getByRole('heading', { name: 'How are you feeling today?' })).not.toBeVisible()
 
-  // One tap closes the day — quietly, at whatever hour it is.
   await page.getByRole('button', { name: /Heavy/ }).click()
-  await expect(page.getByRole('heading', { name: /Feeling heavy/ })).toBeVisible()
-  await expect(page.getByText('Before the day closes')).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: /Ending heavy/ })).toBeVisible()
+  await expect(page.getByText(/carried to the end/)).toBeVisible()
+  await expect(page.getByText('Evening check-in')).not.toBeVisible()
+})
+
+test('a morning check-in can later be joined by an optional evening one', async ({ page }) => {
+  await page.clock.install({ time: new Date(2026, 0, 15, 9, 30) })
+  await page.goto('/')
+
+  await page.getByRole('button', { name: /Steady/ }).click()
+  await expect(page.getByRole('heading', { name: /Feeling steady/ })).toBeVisible()
+
+  // Jump to late evening: the optional evening ask appears beside the record.
+  await page.clock.fastForward(12 * 60 * 60 * 1000) // 09:30 -> 21:30
+  await page.reload()
+  await expect(page.getByRole('heading', { name: /How did today actually go\?/ })).toBeVisible()
+  await expect(page.getByText(/no pressure/)).toBeVisible()
+  await expect(page.getByText(/This morning you felt steady/)).toBeVisible()
+
+  await page.getByRole('button', { name: /Heavy/ }).click()
+  await expect(page.getByRole('heading', { name: /Ending heavy/ })).toBeVisible()
+  await expect(page.getByText(/Started steady/)).toBeVisible()
+
+  // Both survive a reload — the day stays bookended.
+  await page.reload()
+  await expect(page.getByRole('heading', { name: /Ending heavy/ })).toBeVisible()
+  await expect(page.getByText(/Started steady/)).toBeVisible()
 })
 
 test('a slip resets the count gently and keeps the best streak', async ({ page }) => {

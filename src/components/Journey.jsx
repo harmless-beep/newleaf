@@ -3,6 +3,7 @@ import { HABIT_BY_ID, HABITS } from '../data/habits.js'
 const HABIT_IDS = HABITS.map((h) => h.id)
 import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
 import { addDaysKey, bestOf, dateKey, dayLabel, daysBetween, milestoneTouchedToday, nextMilestone, streakFor } from '../lib/streaks.js'
+import { dayMood, moodOf } from '../lib/checkins.js'
 import HabitPicker from './HabitPicker.jsx'
 
 function fmtAnchor(anchor) {
@@ -21,26 +22,32 @@ function Reflection({ today, picks, runs, checkins }) {
   const startKey = `${prefix}-01`
   const monthName = now.toLocaleDateString(undefined, { month: 'long' })
 
-  const monthEntries = Object.entries(checkins).filter(([k]) => k.startsWith(prefix) && k <= today)
+  // A day counts once: its morning mood, or its evening mood when only that exists.
+  const monthKeys = Object.keys(checkins).filter((k) => k.startsWith(prefix) && k <= today)
   const counts = {}
-  for (const [, id] of monthEntries) {
-    if (MOOD_BY_ID[id]) counts[id] = (counts[id] || 0) + 1
+  let heavyDays = 0
+  let restlessDays = 0
+  for (const k of monthKeys) {
+    const m = dayMood(checkins, k)
+    if (m && MOOD_BY_ID[m]) counts[m] = (counts[m] || 0) + 1
+    if (moodOf(checkins, k, 'morning') === 'heavy' || moodOf(checkins, k, 'evening') === 'heavy') heavyDays += 1
+    if (moodOf(checkins, k, 'morning') === 'restless' || moodOf(checkins, k, 'evening') === 'restless') restlessDays += 1
   }
 
   const lines = []
-  if (monthEntries.length > 0) {
+  if (monthKeys.length > 0) {
     const [topId, topN] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
     const top = MOOD_BY_ID[topId]
-    const total = monthEntries.length
+    const total = monthKeys.length
     lines.push(
       topN / total >= 0.45
         ? `${top.emoji} ${top.name} was your most common feeling this month — on ${topN} of the ${total} day${total === 1 ? '' : 's'} you checked in.`
         : `Your ${total} check-in${total === 1 ? '' : 's'} spread across moods; ${top.emoji} ${top.name.toLowerCase()} led with ${topN}.`
     )
-    if (counts.heavy) {
+    if (heavyDays > 0) {
       lines.push('Heavy days were part of this month — and you kept choosing yourself through them. That counts for more than any streak.')
     }
-    if (counts.restless) {
+    if (restlessDays > 0) {
       lines.push('Restless days rose too, and each one passed. You outlasted every wave.')
     }
   }
@@ -59,7 +66,7 @@ function Reflection({ today, picks, runs, checkins }) {
 
   if (lines.length === 0) return null
 
-  const closing = counts.heavy
+  const closing = heavyDays > 0
     ? 'A month with heavy days in it is still a month you lived through. Be proud of surviving it, and kind about the rest.'
     : 'No month is the whole story. Whatever this one has held so far, it brought you here.'
 
@@ -87,8 +94,8 @@ function dayCell(key, today, picks, runs, checkins) {
     return run && key >= run.anchor
   })
   const kept = tracked.filter((id) => streakFor(runs[id], key) >= 1).length
-  const mood = checkins[key] ? MOOD_BY_ID[checkins[key]] : null
-  return { mood, kept, tracked: tracked.length }
+  const mid = dayMood(checkins, key) // morning, falling back to evening
+  return { mood: mid ? MOOD_BY_ID[mid] : null, kept, tracked: tracked.length }
 }
 
 const keptMark = (kept, tracked) =>

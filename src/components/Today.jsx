@@ -1,5 +1,6 @@
-import { DAILIES, MOODS, MOOD_BY_ID } from '../data/wisdom.js'
+import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID } from '../data/wisdom.js'
 import { HABIT_BY_ID } from '../data/habits.js'
+import { moodOf, setMood } from '../lib/checkins.js'
 import { bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
 import HabitPicker from './HabitPicker.jsx'
 
@@ -24,53 +25,105 @@ const TOOLS = [
   { id: 'journal', label: '✍️ Write it out', when: 'something needs saying' },
 ]
 
-function CheckIn({ checkins, setCheckins, dayKey }) {
-  const moodId = checkins[dayKey]
-  const hour = new Date().getHours()
-  const dayIsClosing = hour >= 19 // the quiet nudge only speaks in the evening
+function MoodButtons({ onPick, label }) {
+  return (
+    <div className="mood-grid" role="group" aria-label={label}>
+      {MOODS.map((m) => (
+        <button key={m.id} type="button" className="mood" onClick={() => onPick(m.id)}>
+          <span aria-hidden="true">{m.emoji}</span>
+          {m.name}
+        </button>
+      ))}
+    </div>
+  )
+}
 
-  if (moodId && MOOD_BY_ID[moodId]) {
-    const mood = MOOD_BY_ID[moodId]
+// One or two gentle check-ins per day: a morning ask (“how are you feeling?”)
+// and an optional evening one (“how did the day actually go?”) that shows once
+// the day is closing — especially when the morning one was skipped.
+function CheckIn({ checkins, setCheckins, dayKey }) {
+  const hour = new Date().getHours()
+  const eveningTime = hour >= 19
+  const morning = moodOf(checkins, dayKey, 'morning')
+  const evening = moodOf(checkins, dayKey, 'evening')
+  const morningMood = morning ? MOOD_BY_ID[morning] : null
+  const eveningMood = evening ? MOOD_BY_ID[evening] : null
+
+  // The evening ask — optional, un-pushy, shown once the day is closing.
+  if (eveningTime && !evening) {
     return (
-      <section className="card checkin" aria-live="polite">
-        <div className="eyebrow">Your check-in today</div>
-        <div className="checkin-done">
-          <span className="big" aria-hidden="true">
-            {mood.emoji}
-          </span>
-          <div>
-            <h2>Feeling {mood.name.toLowerCase()} today</h2>
-            <p>{mood.reply}</p>
-          </div>
-        </div>
-        <p className="mute" style={{ margin: '12px 0 0' }}>
-          Thank you for checking in. Tomorrow is a new check-in — however you feel then is welcome too.
+      <section className="card checkin checkin-evening" aria-live="polite">
+        <div className="eyebrow">Evening check-in</div>
+        <h2>
+          {morningMood ? 'How did today actually go?' : 'Morning slipped by — how did today actually go?'}
+        </h2>
+        {morningMood && (
+          <p className="mute" style={{ margin: 0 }}>
+            This morning you felt {morningMood.name.toLowerCase()}. The day may have changed that — either way is
+            welcome.
+          </p>
+        )}
+        <p className="mute" style={{ margin: '10px 0 0' }}>
+          Optional — one tap, no pressure. Skip it and tomorrow starts fresh either way.
         </p>
+        <MoodButtons onPick={(id) => setCheckins(setMood(checkins, dayKey, 'evening', id))} label="Choose how your day went" />
       </section>
     )
   }
+
+  // No check-in at all yet and the day isn’t closing — the morning ask.
+  if (!morning && !evening) {
+    return (
+      <section className="card checkin">
+        <div className="eyebrow">Morning check-in</div>
+        <h2>How are you feeling today?</h2>
+        <p className="mute" style={{ margin: 0 }}>
+          One tap. There’s no wrong answer — this is just a gentle way to notice yourself.
+        </p>
+        <MoodButtons onPick={(id) => setCheckins(setMood(checkins, dayKey, 'morning', id))} label="Choose how you feel" />
+      </section>
+    )
+  }
+
+  // Both slots recorded — the day is bookended, quietly.
+  if (evening) {
+    return (
+      <section className="card checkin" aria-live="polite">
+        <div className="eyebrow">Your check-ins today</div>
+        <div className="checkin-done">
+          <span className="big" aria-hidden="true">
+            {eveningMood.emoji}
+          </span>
+          <div>
+            <h2>Ending {eveningMood.name.toLowerCase()}</h2>
+            <p>{EVENING_REPLY[eveningMood.id]}</p>
+            {morningMood && (
+              <p className="mute" style={{ margin: '6px 0 0' }}>
+                Started {morningMood.name.toLowerCase()} {morningMood.emoji}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Morning only, day still open.
   return (
-    <section className={`card checkin${dayIsClosing ? ' checkin-nudge' : ''}`}>
-      <div className="eyebrow">{dayIsClosing ? 'Before the day closes' : 'Morning check-in'}</div>
-      <h2>{dayIsClosing ? 'No check-in today — that’s okay' : 'How are you feeling today?'}</h2>
-      <p className="mute" style={{ margin: 0 }}>
-        {dayIsClosing
-          ? 'If you’d like, mark how the day actually went — one tap, no pressure. If not, tomorrow starts fresh either way.'
-          : 'One tap. There’s no wrong answer — this is just a gentle way to notice yourself.'}
-      </p>
-      <div className="mood-grid" role="group" aria-label="Choose how you feel">
-        {MOODS.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className="mood"
-            onClick={() => setCheckins({ ...checkins, [dayKey]: m.id })}
-          >
-            <span aria-hidden="true">{m.emoji}</span>
-            {m.name}
-          </button>
-        ))}
+    <section className="card checkin" aria-live="polite">
+      <div className="eyebrow">Your check-in today</div>
+      <div className="checkin-done">
+        <span className="big" aria-hidden="true">
+          {morningMood.emoji}
+        </span>
+        <div>
+          <h2>Feeling {morningMood.name.toLowerCase()} today</h2>
+          <p>{morningMood.reply}</p>
+        </div>
       </div>
+      <p className="mute" style={{ margin: '12px 0 0' }}>
+        Thank you for checking in. Tomorrow is a new check-in — however you feel then is welcome too.
+      </p>
     </section>
   )
 }

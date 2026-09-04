@@ -93,6 +93,15 @@ export const MOODS = [
 
 export const MOOD_BY_ID = Object.fromEntries(MOODS.map((m) => [m.id, m]))
 
+// Replies for the optional evening check-in, which asks how the day went.
+export const EVENING_REPLY = {
+  bright: 'A bright day — let it end that way. Rest well.',
+  steady: 'A steady day is a real win. Rest well.',
+  quiet: 'A quiet day still counts. Rest well — you earned it.',
+  restless: 'Restless days end too, and this one did. Rest well.',
+  heavy: 'A heavy day is still a day you carried to the end. Rest — you made it through.',
+}
+
 export const RIDE_DONE = 'You rode the wave all the way down. It passed — and you stayed. That was courage.'
 
 export const BREATH_DONE =
