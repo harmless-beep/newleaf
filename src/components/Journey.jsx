@@ -77,34 +77,83 @@ function Reflection({ today, picks, runs, checkins }) {
   )
 }
 
-export default function Journey({ picks, runs, checkins, addHabit, removeHabit, slipHabit }) {
+// What the record truly shows for one day: the checked-in mood, and how many
+// of that day's active paths were kept. Days before a path began — and days
+// still ahead — read as “—” rather than guessing.
+function dayCell(key, today, picks, runs, checkins) {
+  if (key > today) return { mood: null, kept: 0, tracked: 0 }
+  const tracked = picks.filter((id) => {
+    const run = runs[id]
+    return run && key >= run.anchor
+  })
+  const kept = tracked.filter((id) => streakFor(runs[id], key) >= 1).length
+  const mood = checkins[key] ? MOOD_BY_ID[checkins[key]] : null
+  return { mood, kept, tracked: tracked.length }
+}
+
+const keptMark = (kept, tracked) =>
+  tracked === 0 ? (
+    <span className="miss">—</span>
+  ) : kept === tracked ? (
+    '✓'
+  ) : (
+    <span className="miss">
+      {kept}/{tracked}
+    </span>
+  )
+
+export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, addHabit, removeHabit, slipHabit }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
   const today = dateKey()
 
-  // The last seven days: each day's mood (if checked in) beside how many of
-  // that day's chosen paths were kept. Days before a habit began show as “—”.
+  const pad = (n) => String(n).padStart(2, '0')
+  const cellFor = (key) => dayCell(key, today, picks, runs, checkins)
+  const describe = (c) =>
+    c.mood
+      ? `${c.mood.name}${c.tracked ? (c.kept === c.tracked ? ', all paths kept' : `, kept ${c.kept} of ${c.tracked}`) : ''}`
+      : 'no check-in'
+
+  // This week: each day's mood (if checked in) beside how many of that day's
+  // chosen paths were kept. Days before a habit began show as “—”.
   const week = Array.from({ length: 7 }, (_, i) => {
     const key = addDaysKey(today, i - 6)
     const d = new Date(`${key}T00:00:00`)
-    const tracked = picks.filter((id) => {
-      const run = runs[id]
-      return run && key >= run.anchor
-    })
-    const kept = tracked.filter((id) => streakFor(runs[id], key) >= 1).length
-    const mood = checkins[key] ? MOOD_BY_ID[checkins[key]] : null
-    const what = mood
-      ? `${mood.name}${tracked.length ? (kept === tracked.length ? ', all paths kept' : `, kept ${kept} of ${tracked.length}`) : ''}`
-      : 'no check-in'
+    const c = cellFor(key)
     return {
       key,
       day: d.toLocaleDateString(undefined, { weekday: 'short' }),
       date: d.getDate(),
-      mood,
-      kept,
-      tracked: tracked.length,
-      label: `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${what}`,
+      mood: c.mood,
+      kept: c.kept,
+      tracked: c.tracked,
+      label: `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${describe(c)}`,
     }
   })
+
+  // This calendar month (Monday-first) for the expandable view.
+  const [year, monthNum] = today.split('-').map(Number)
+  const monthPrefix = `${year}-${pad(monthNum)}`
+  const monthName = new Date(year, monthNum - 1, 1).toLocaleDateString(undefined, { month: 'long' })
+  const lastDate = new Date(year, monthNum, 0).getDate()
+  const leadBlanks = (new Date(year, monthNum - 1, 1).getDay() + 6) % 7
+  const month = []
+  for (let b = 0; b < leadBlanks; b++) month.push({ blank: true })
+  for (let d = 1; d <= lastDate; d++) {
+    const key = `${monthPrefix}-${pad(d)}`
+    const c = cellFor(key)
+    const dt = new Date(`${key}T00:00:00`)
+    const future = key > today
+    month.push({
+      key,
+      date: d,
+      future,
+      weekend: dt.getDay() === 0 || dt.getDay() === 6,
+      mood: c.mood,
+      kept: c.kept,
+      tracked: c.tracked,
+      label: future ? `${monthName} ${d} — not here yet` : `${monthName} ${d}: ${describe(c)}`,
+    })
+  }
 
   if (picks.length === 0) {
     return (
@@ -134,36 +183,74 @@ export default function Journey({ picks, runs, checkins, addHabit, removeHabit, 
       </section>
 
       <section className="card">
-        <div className="eyebrow">Your last seven days</div>
-        <p className="mute" style={{ margin: '-2px 0 0' }}>
+        <div className="strip-head">
+          <div className="eyebrow" style={{ marginBottom: 0 }}>
+            {stripView === 'week' ? 'Your last seven days' : `${monthName} at a glance`}
+          </div>
+          <button
+            type="button"
+            className="text-link"
+            onClick={() => setStripView(stripView === 'week' ? 'month' : 'week')}
+          >
+            {stripView === 'week' ? 'See the whole month →' : '← Back to this week'}
+          </button>
+        </div>
+        <p className="mute" style={{ margin: '2px 0 0' }}>
           How you felt each morning, beside how your paths went. Just a record — not a grade.
         </p>
-        <div className="week-strip" role="list" aria-label="Last seven days of moods and kept habits">
-          {week.map((w) => (
-            <div key={w.key} className={`week-cell${w.key === today ? ' today' : ''}`} role="listitem" aria-label={w.label}>
-              <span className="week-day">{w.day}</span>
-              <span className="week-date">{w.date}</span>
-              <span className={`week-mood${w.mood ? '' : ' empty'}`} aria-hidden="true">
-                {w.mood ? w.mood.emoji : '·'}
-              </span>
-              <span className="week-kept">
-                {w.tracked === 0 ? (
-                  <span className="miss">—</span>
-                ) : w.kept === w.tracked ? (
-                  '✓'
-                ) : (
-                  <span className="miss">
-                    {w.kept}/{w.tracked}
+
+        {stripView === 'week' ? (
+          <>
+            <div className="week-strip" role="list" aria-label="Last seven days of moods and kept habits">
+              {week.map((w) => (
+                <div key={w.key} className={`week-cell${w.key === today ? ' today' : ''}`} role="listitem" aria-label={w.label}>
+                  <span className="week-day">{w.day}</span>
+                  <span className="week-date">{w.date}</span>
+                  <span className={`week-mood${w.mood ? '' : ' empty'}`} aria-hidden="true">
+                    {w.mood ? w.mood.emoji : '·'}
                   </span>
-                )}
-              </span>
+                  <span className="week-kept">{keptMark(w.kept, w.tracked)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className="mute" style={{ margin: '10px 0 0' }}>
-          <b>✓</b> every path kept · like <b>2/3</b> some kept · <b>—</b> hadn’t begun yet · a dim dot is a day
-          without a check-in
-        </p>
+            <p className="mute" style={{ margin: '10px 0 0' }}>
+              <b>✓</b> every path kept · like <b>2/3</b> some kept · <b>—</b> hadn’t begun yet · a dim dot is a day
+              without a check-in
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="month-grid" role="grid" aria-label={`${monthName} moods and kept habits`}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => (
+                <div key={w} className="month-head" role="columnheader">
+                  {w}
+                </div>
+              ))}
+              {month.map((c, i) =>
+                c.blank ? (
+                  <div key={`blank-${i}`} className="month-cell blank" aria-hidden="true" />
+                ) : (
+                  <div
+                    key={c.key}
+                    role="gridcell"
+                    aria-label={c.label}
+                    className={`month-cell${c.future ? ' future' : ''}${c.weekend && !c.future ? ' weekend' : ''}${c.key === today ? ' today' : ''}`}
+                  >
+                    <span className="month-day">{c.date}</span>
+                    <span className={`week-mood${c.mood ? '' : ' empty'}`} aria-hidden="true">
+                      {c.mood ? c.mood.emoji : '·'}
+                    </span>
+                    <span className="week-kept">{c.future ? <span className="miss" /> : keptMark(c.kept, c.tracked)}</span>
+                  </div>
+                )
+              )}
+            </div>
+            <p className="mute" style={{ margin: '10px 0 0' }}>
+              <b>✓</b> every path kept · like <b>2/3</b> some kept · <b>—</b> no active path that day · dim days
+              weren’t checked in · faded days are still ahead
+            </p>
+          </>
+        )}
       </section>
 
       <Reflection today={today} picks={picks} runs={runs} checkins={checkins} />

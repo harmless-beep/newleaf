@@ -126,6 +126,30 @@ test('a seeded month of check-ins and a long run produce a gentle monthly reflec
   }
 })
 
+test('the journey strip expands into a full-month calendar view and back', async ({ page }) => {
+  const now = new Date()
+  const monthName = now.toLocaleDateString(undefined, { month: 'long' })
+
+  await page.addInitScript(() => {
+    localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+  })
+  await page.goto('/')
+  await mainNav(page).getByRole('button', { name: /My journey/ }).click()
+
+  // Default view is the week strip; expand to the whole month.
+  await expect(page.getByText('Your last seven days')).toBeVisible()
+  await page.getByRole('button', { name: /See the whole month/ }).click()
+  await expect(page.getByText(`${monthName} at a glance`)).toBeVisible()
+  const todayCell = page.locator('.month-cell.today')
+  await expect(todayCell).toBeVisible()
+  await expect(todayCell.locator('.month-day')).toHaveText(String(now.getDate()))
+
+  // Collapse back to the week.
+  await page.getByRole('button', { name: /Back to this week/ }).click()
+  await expect(page.getByText('Your last seven days')).toBeVisible()
+  await expect(page.locator('.week-strip')).toBeVisible()
+})
+
 test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
   await page.goto('/')
 

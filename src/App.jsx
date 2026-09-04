@@ -19,6 +19,7 @@ export default function App() {
   const [picks, setPicks] = usePersisted('nl.picks', [])
   const [runs, setRuns] = usePersisted('nl.runs', {})
   const [checkins, setCheckins] = usePersisted('nl.checkins', {})
+  const [stripView, setStripView] = useState('week')
 
   const go = (nextTab, subTool) => {
     setTab(nextTab)
@@ -115,6 +116,8 @@ export default function App() {
             picks={picks}
             runs={runs}
             checkins={checkins}
+            stripView={stripView}
+            setStripView={setStripView}
             addHabit={addHabit}
             removeHabit={removeHabit}
             slipHabit={slipHabit}
