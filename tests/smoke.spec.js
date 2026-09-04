@@ -151,6 +151,8 @@ test('the journey strip expands into a full-month calendar view and back', async
 })
 
 test('morning check-in records a mood that survives a reload and shows in the journey strip', async ({ page }) => {
+  // Pin the clock to mid-morning so the card is deterministically the morning ask.
+  await page.clock.install({ time: new Date(2026, 0, 15, 9, 30) })
   await page.goto('/')
 
   // No check-in yet — the mood picker is shown.
@@ -173,6 +175,21 @@ test('morning check-in records a mood that survives a reload and shows in the jo
   await expect(strip).toBeVisible()
   await expect(strip.getByText('🌤')).toBeVisible()
   await expect(strip.getByText('✓', { exact: true })).toBeVisible()
+})
+
+test('an unanswered check-in gets a soft end-of-day nudge, not a demand', async ({ page }) => {
+  // Late evening, still no check-in for the day.
+  await page.clock.install({ time: new Date(2026, 0, 15, 21, 0) })
+  await page.goto('/')
+
+  await expect(page.getByText('Before the day closes')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /No check-in today/ })).toBeVisible()
+  await expect(page.getByText(/no pressure/)).toBeVisible()
+
+  // One tap closes the day — quietly, at whatever hour it is.
+  await page.getByRole('button', { name: /Heavy/ }).click()
+  await expect(page.getByRole('heading', { name: /Feeling heavy/ })).toBeVisible()
+  await expect(page.getByText('Before the day closes')).not.toBeVisible()
 })
 
 test('a slip resets the count gently and keeps the best streak', async ({ page }) => {

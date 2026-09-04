@@ -930,6 +930,15 @@ textarea.journal:focus {
   transform: translateY(-1px);
 }
 
+.checkin-nudge {
+  border-style: dashed;
+  background: linear-gradient(135deg, #fffcf4, #f8efdf);
+}
+
+.checkin-nudge .eyebrow {
+  color: var(--ink-3);
+}
+
 .checkin-done {
   display: flex;
   gap: 14px;

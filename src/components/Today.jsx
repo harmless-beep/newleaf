@@ -26,11 +26,14 @@ const TOOLS = [
 
 function CheckIn({ checkins, setCheckins, dayKey }) {
   const moodId = checkins[dayKey]
+  const hour = new Date().getHours()
+  const dayIsClosing = hour >= 19 // the quiet nudge only speaks in the evening
+
   if (moodId && MOOD_BY_ID[moodId]) {
     const mood = MOOD_BY_ID[moodId]
     return (
       <section className="card checkin" aria-live="polite">
-        <div className="eyebrow">Morning check-in</div>
+        <div className="eyebrow">Your check-in today</div>
         <div className="checkin-done">
           <span className="big" aria-hidden="true">
             {mood.emoji}
@@ -47,13 +50,15 @@ function CheckIn({ checkins, setCheckins, dayKey }) {
     )
   }
   return (
-    <section className="card checkin">
-      <div className="eyebrow">Morning check-in</div>
-      <h2>How are you feeling today?</h2>
+    <section className={`card checkin${dayIsClosing ? ' checkin-nudge' : ''}`}>
+      <div className="eyebrow">{dayIsClosing ? 'Before the day closes' : 'Morning check-in'}</div>
+      <h2>{dayIsClosing ? 'No check-in today — that’s okay' : 'How are you feeling today?'}</h2>
       <p className="mute" style={{ margin: 0 }}>
-        One tap. There’s no wrong answer — this is just a gentle way to notice yourself.
+        {dayIsClosing
+          ? 'If you’d like, mark how the day actually went — one tap, no pressure. If not, tomorrow starts fresh either way.'
+          : 'One tap. There’s no wrong answer — this is just a gentle way to notice yourself.'}
       </p>
-      <div className="mood-grid" role="group" aria-label="Choose how you feel today">
+      <div className="mood-grid" role="group" aria-label="Choose how you feel">
         {MOODS.map((m) => (
           <button
             key={m.id}
