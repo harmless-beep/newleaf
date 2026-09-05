@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/warm_cream" />
-    <item android:drawable="@drawable/ic_leaf_mark" />
+    <!-- The leaf mark, sized and centered via the same @dimen/splash_leaf the
+         code-side splash overlay uses (a layer without explicit bounds would
+         otherwise stretch the 108dp vector edge-to-edge). -->
+    <item
+        android:gravity="center"
+        android:width="@dimen/splash_leaf"
+        android:height="@dimen/splash_leaf"
+        android:drawable="@drawable/ic_leaf_mark" />
 </layer-list>

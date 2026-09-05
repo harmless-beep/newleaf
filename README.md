@@ -35,6 +35,13 @@ Regenerate them anytime with
 
 - The tone throughout is **acceptance first**: no shame, no guilt trips,
   no toxic positivity. A slip is treated as information, not failure.
+- First-time visitors get one warm welcome screen — logo, a plain-spoken
+  hello, a one-line introduction to each tab, and a tiny breathing circle
+  they can tap to try an urge tool before anything is asked of them.
+  Returning visitors never see it again.
+- Milestone days are honoured with a gentle, one-time leaf burst (small
+  sage leaves drifting up around a quiet “Day N” card) — celebrated once,
+  never nagging, and skipped entirely for reduced-motion users.
 - The icons show the *goal* (lotus, water, lungs, sun…) rather than the
   habit itself.
 - Milestones are celebrated at 1, 2, 3, 5, 7, 10, 14, 21, 30, 45, 60, 90,
@@ -75,12 +82,14 @@ as the web version.
   committed — it lives only on this machine so you can sign future
   updates. Keep it safe; the password is in `android/keystore.properties`.
 - The wrapper's warm details: edge-to-edge display (the cream page runs
-  behind transparent system bars and pads itself around them), a gentle
-  fade-in from the cream splash as the page loads, a soft native tick on
-  every check-in tap, sage status bar accents, cream splash with a leaf
-  mark, and a hand-drawn leaf launcher icon (real PNGs at every mipmap
-  density — cream tile, transparent adaptive foreground, plus a round
-  variant) all match the site's palette. Regenerate the icon anytime with
+  behind transparent system bars and pads itself around them), a cream
+  splash whose leaf mark glides up into the header logo the moment the
+  page paints its first frame — as the cream dissolves around it (never
+  lifting onto a blank screen; a tap anywhere skips the wait instantly), a
+  soft native tick on every check-in tap, sage status bar accents, and a
+  hand-drawn leaf launcher icon (real PNGs at every mipmap density — cream
+  tile, transparent adaptive foreground, plus a round variant) all match
+  the site's palette. Regenerate the icon anytime with
   `node scripts/make-icon.mjs`.
 - **Gentle evening reminder (optional, in-app only):** if the evening
   check-in is left open, a quiet "Evening check-in" card on the Today

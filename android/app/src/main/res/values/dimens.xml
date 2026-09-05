@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The leaf mark size, shared by the theme's window background (splash
+         layer-list) and the in-code splash overlay. Both reference this one
+         value, so they stay pixel-identical on every screen size and density. -->
+    <dimen name="splash_leaf">96dp</dimen>
+</resources>

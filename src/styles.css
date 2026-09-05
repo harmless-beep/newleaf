@@ -94,6 +94,110 @@ button {
   }
 }
 
+/* ---------- gentle motion ---------- */
+
+/* Every tab view rises softly when it appears. */
+.tab-view {
+  animation: tabIn 0.4s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+@keyframes tabIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Cards inside a freshly-mounted tab settle in one after another, like
+   leaves unfurling — each a few frames behind the one above it. */
+.tab-view > section {
+  animation: cardIn 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+.tab-view > section:nth-of-type(1) { animation-delay: 0.03s; }
+.tab-view > section:nth-of-type(2) { animation-delay: 0.09s; }
+.tab-view > section:nth-of-type(3) { animation-delay: 0.15s; }
+.tab-view > section:nth-of-type(4) { animation-delay: 0.21s; }
+.tab-view > section:nth-of-type(5) { animation-delay: 0.27s; }
+.tab-view > section:nth-of-type(6) { animation-delay: 0.33s; }
+.tab-view > section:nth-of-type(7) { animation-delay: 0.39s; }
+.tab-view > section:nth-of-type(8) { animation-delay: 0.45s; }
+.tab-view > section:nth-of-type(9) { animation-delay: 0.51s; }
+.tab-view > section:nth-of-type(10) { animation-delay: 0.57s; }
+.tab-view > section:nth-of-type(11) { animation-delay: 0.63s; }
+.tab-view > section:nth-of-type(12) { animation-delay: 0.69s; }
+.tab-view > section:nth-of-type(n + 13) { animation-delay: 0.75s; }
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The Today greeting: word first, sun popping in behind it. */
+.greet {
+  display: inline-block;
+  animation: riseWord 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.greet-emoji {
+  display: inline-block;
+  animation: sunPop 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) 0.22s both;
+}
+
+@keyframes riseWord {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sunPop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-40deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.25) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Mood taps press down softly; the milestone track draws itself in. */
+.checkin .mood:active {
+  transform: scale(0.94);
+}
+
+.track .fill {
+  transform-origin: left center;
+  animation: fillIn 1s cubic-bezier(0.22, 0.8, 0.3, 1) 0.3s both;
+}
+
+@keyframes fillIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* ---------- header ---------- */
 
 .site-header {
@@ -126,8 +230,15 @@ button {
   gap: 8px;
 }
 
-.brand .leaf {
-  font-size: 1.3rem;
+.brand .brand-mark {
+  display: inline-flex;
+  align-self: center;
+  filter: drop-shadow(0 2px 4px rgba(110, 70, 30, 0.18));
+  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.brand:hover .brand-mark {
+  transform: rotate(-6deg) scale(1.06);
 }
 
 .brand small {
@@ -168,6 +279,12 @@ button {
   background: #fffdf8;
   color: var(--accent-deep);
   box-shadow: 0 1px 4px rgba(110, 70, 30, 0.16);
+}
+
+/* Phone-only bottom tab bar (hidden on wide screens; the top nav hides on
+   narrow ones, so only one navigation is ever visible). */
+.nav-bottom {
+  display: none;
 }
 
 /* ---------- cards ---------- */
@@ -1640,16 +1757,65 @@ textarea.journal:focus {
 
 @media (max-width: 560px) {
   .app {
-    padding: var(--inset-top) 12px calc(80px + var(--inset-bottom));
+    padding: var(--inset-top) 12px calc(118px + var(--inset-bottom));
   }
   .header-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 12px 14px 10px;
-  }
-  .nav {
+    flex-direction: row;
     justify-content: center;
+    gap: 8px;
+    padding: 10px 14px 8px;
+  }
+  .nav-top {
+    display: none;
+  }
+  .nav-bottom {
+    display: flex;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(4px + var(--inset-bottom));
+    z-index: 40;
+    gap: 4px;
+    background: rgba(255, 251, 244, 0.94);
+    border: 1px solid rgba(238, 220, 194, 0.95);
+    border-radius: 24px;
+    padding: 6px;
+    box-shadow: 0 14px 40px -18px rgba(110, 70, 30, 0.45), 0 2px 8px rgba(110, 70, 30, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .nav-bottom button {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: none;
+    background: transparent;
+    color: var(--ink-2);
+    border-radius: 18px;
+    padding: 7px 2px 6px;
+    cursor: pointer;
+    font-size: 0.64rem;
+    font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  }
+  .nav-bottom button:active {
+    transform: scale(0.95);
+  }
+  .nav-bottom .tab-ico {
+    font-size: 1.24rem;
+    line-height: 1;
+  }
+  .nav-bottom button.active {
+    background: #fffdf8;
+    color: var(--accent-deep);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(110, 70, 30, 0.14);
   }
   .hero h1 {
     font-size: 1.6rem;
@@ -1662,6 +1828,314 @@ textarea.journal:focus {
   }
 }
 
+/* ---------- first-open welcome ---------- */
+
+.welcome-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: auto;
+  display: flex;
+  padding: calc(22px + var(--inset-top)) 18px calc(22px + var(--inset-bottom));
+  background:
+    radial-gradient(720px 420px at 50% -6%, rgba(224, 166, 62, 0.2), transparent 62%),
+    radial-gradient(560px 420px at -8% 108%, rgba(201, 111, 74, 0.12), transparent 58%),
+    radial-gradient(560px 420px at 104% 92%, rgba(125, 156, 99, 0.14), transparent 60%),
+    var(--bg);
+}
+
+.welcome {
+  width: min(430px, 100%);
+  margin: auto; /* centres when short, scrolls from the top when tall */
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 34px 28px 26px;
+  box-shadow: 0 24px 70px -26px rgba(110, 70, 30, 0.45);
+  text-align: center;
+  animation: cardIn 0.6s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.welcome-mark {
+  margin-bottom: 14px;
+  animation: leafGrow 0.9s cubic-bezier(0.3, 1.2, 0.4, 1) both;
+}
+
+.welcome-mark .leaf-logo {
+  animation: leafSway 6.5s ease-in-out 1.2s infinite;
+}
+
+@keyframes leafGrow {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-14deg) translateY(10px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes leafSway {
+  0%,
+  100% {
+    transform: rotate(-3deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-3px);
+  }
+}
+
+.welcome-kicker {
+  margin-bottom: 6px;
+}
+
+.welcome h1 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.welcome-lead {
+  color: var(--ink-2);
+  font-size: 0.98rem;
+  margin: 0 0 18px;
+}
+
+.welcome-stops {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  margin-bottom: 22px;
+}
+
+.welcome-stop {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  background: rgba(255, 253, 248, 0.85);
+  border: 1px solid rgba(238, 220, 194, 0.9);
+  border-radius: 15px;
+  padding: 11px 14px;
+  animation: cardIn 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(0.35s + var(--stop) * 0.12s);
+}
+
+.welcome-stop .stop-ico {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  background: rgba(224, 166, 62, 0.14);
+  border-radius: 11px;
+}
+
+.welcome-stop strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin-bottom: 1px;
+}
+
+.welcome-stop .stop-text {
+  display: block;
+  font-size: 0.87rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.btn-lg {
+  padding: 13px 30px;
+  font-size: 1.05rem;
+  border-radius: 999px;
+}
+
+.welcome-begin {
+  width: 100%;
+  animation: cardIn 0.5s ease 0.9s both;
+}
+
+.welcome-trust {
+  margin: 13px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+/* ---------- gentle milestone leaf burst ---------- */
+
+.burst-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* above the page, below keepsake/card overlays */
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none; /* never blocks a tap on what's beneath */
+}
+
+.burst-card {
+  pointer-events: none;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 22px;
+  padding: 18px 28px 16px;
+  text-align: center;
+  box-shadow: 0 24px 60px -24px rgba(110, 70, 30, 0.45), 0 0 0 6px rgba(255, 253, 248, 0.6);
+  animation: burstIn 0.65s cubic-bezier(0.22, 1.15, 0.36, 1) both;
+  max-width: min(86vw, 340px);
+}
+
+@keyframes burstIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.65) translateY(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.burst-card .eyebrow {
+  margin-bottom: 2px;
+  color: var(--sage);
+}
+
+.burst-day {
+  font-size: 2.2rem;
+  color: var(--accent-deep);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.burst-habit {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.burst-line {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+}
+
+.burst-leaf {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  animation: leafFly var(--dur, 1700ms) ease-out var(--delay, 0ms) both;
+}
+
+@keyframes leafFly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, -90px))) rotate(var(--rot, 40deg))
+      scale(1);
+  }
+}
+
+/* ---------- welcome breathing demo ---------- */
+
+.welcome-demo {
+  margin: 0 0 18px;
+  padding: 14px 12px 12px;
+  border: 1.5px dashed rgba(125, 156, 99, 0.5);
+  border-radius: 20px;
+  background:
+    radial-gradient(260px 150px at 50% 0%, rgba(125, 156, 99, 0.14), transparent 70%),
+    rgba(250, 246, 236, 0.75);
+}
+
+.demo-eyebrow {
+  color: var(--sage);
+}
+
+.demo-circle {
+  width: 148px;
+  height: 148px;
+  margin: 6px auto 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--accent-deep);
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.9), transparent 55%),
+    radial-gradient(circle at 50% 50%, #fdf1da, #f2c992 82%);
+  box-shadow: inset 0 -6px 16px rgba(180, 110, 50, 0.12), 0 10px 24px -12px rgba(180, 110, 50, 0.4);
+  transition: transform 1.5s cubic-bezier(0.45, 0, 0.35, 1);
+  will-change: transform;
+}
+
+.demo-circle:focus-visible {
+  outline: 3px solid rgba(125, 156, 99, 0.6);
+  outline-offset: 3px;
+}
+
+.demo-circle:active {
+  transform: scale(0.96);
+}
+
+.demo-circle:disabled {
+  cursor: default;
+}
+
+.demo-label {
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.demo-sec {
+  font-size: 1rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-hint {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.demo-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
 /* ---------- reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1669,7 +2143,9 @@ textarea.journal:focus {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
   }
 }

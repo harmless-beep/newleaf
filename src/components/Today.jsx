@@ -3,6 +3,7 @@ import { DAILIES, EVENING_REPLY, MOODS, MOOD_BY_ID, WIND_DOWN } from '../data/wi
 import { HABIT_BY_ID } from '../data/habits.js'
 import { moodOf, setMood } from '../lib/checkins.js'
 import { addDaysKey, bestOf, dateKey, dayLabel, milestoneTouchedToday, streakFor } from '../lib/streaks.js'
+import { useCountUp } from '../lib/animate.js'
 import { nativeTick, noteCheckin } from '../lib/native.js'
 import HabitPicker from './HabitPicker.jsx'
 
@@ -45,6 +46,16 @@ function MoodButtons({ onPick, label }) {
         </button>
       ))}
     </div>
+  )
+}
+
+// A small counting-up label used where a streak number appears.
+function DaysNum({ value }) {
+  const shown = useCountUp(value)
+  return (
+    <>
+      {shown} {value === 1 ? 'day' : 'days'}
+    </>
   )
 }
 
@@ -219,16 +230,24 @@ export default function Today({ picks, runs, checkins, setCheckins, steps = {}, 
     return { habit, cur, best }
   })
 
+  const hour = new Date().getHours()
+  const eveningTime = hour >= 19
+  const morningMoodId = moodOf(checkins, key, 'morning')
+  const eveningMoodId = moodOf(checkins, key, 'evening')
+  // Re-key the check-in card whenever its content changes so each answer lands
+  // with a gentle entrance instead of a hard swap.
+  const checkinKey = `${key}:${morningMoodId || '-'}:${eveningMoodId || '-'}:${eveningTime ? 'e' : '-'}`
+
   return (
-    <div className="fade-in">
+    <div className="tab-view">
       <section className="hero" style={{ margin: '26px 0 18px' }}>
         <h1>
-          {greet.word} <span aria-hidden="true">☀️</span>
+          <span className="greet">{greet.word}</span> <span className="greet-emoji" aria-hidden="true">☀️</span>
         </h1>
         <p className="sub">{greet.note}</p>
       </section>
 
-      <CheckIn checkins={checkins} setCheckins={setCheckins} dayKey={key} steps={steps} setSteps={setSteps} />
+      <CheckIn key={checkinKey} checkins={checkins} setCheckins={setCheckins} dayKey={key} steps={steps} setSteps={setSteps} />
 
       {steps[key] && (
         <section className="card step-card">
@@ -278,7 +297,7 @@ export default function Today({ picks, runs, checkins, setCheckins, steps = {}, 
                 </div>
                 <div className="mini-name">{habit.name}</div>
                 <div style={{ textAlign: 'right' }}>
-                  <div className="mini-days">{cur === 0 ? 'fresh start' : dayLabel(cur)}</div>
+                  <div className="mini-days">{cur === 0 ? 'fresh start' : <DaysNum value={cur} />}</div>
                   <div className="mini-meta">best {dayLabel(best)}</div>
                 </div>
               </div>

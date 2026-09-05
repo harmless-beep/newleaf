@@ -39,6 +39,9 @@ const seed = {
     { date: dateKeyAgo(5), text: 'Three evenings in a row with no urge at all. Grateful for the quiet ones.' },
   ],
   'nl.steps': { [dateKeyAgo(0)]: 'drink a full glass of water before coffee' },
+  // Day 14 (smoking) was already honoured, so the transient leaf burst does
+  // not freeze mid-air inside the screenshots.
+  'nl.celebrated': { smoking: 14 },
 }
 
 const browser = await chromium.launch()

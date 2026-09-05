@@ -7,6 +7,13 @@ import fs from 'node:fs'
 const mainNav = (page) => page.getByRole('navigation', { name: 'Main' })
 const toolTabs = (page) => page.getByRole('tablist', { name: 'Urge tools' })
 
+// The first-open welcome overlay only appears for a genuinely fresh install,
+// so every test here starts as a returning visitor; the welcome itself has a
+// dedicated test at the bottom that opts back into it.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('nl.welcomed', 'true'))
+})
+
 // Local calendar key for `daysAgo` days before today (mirrors src/lib/streaks.js).
 function dateKeyAgo(daysAgo) {
   const d = new Date()
@@ -602,4 +609,96 @@ test('urge tools: breathing, grounding, ride the wave and journal all work', asy
   await expect(page.getByText('Today was hard, but I stayed with it.')).toBeVisible()
   await page.getByRole('button', { name: 'Delete entry' }).click()
   await expect(page.getByText('Nothing here yet.')).toBeVisible()
+})
+
+test('a first-time visitor is welcomed warmly, and “Begin gently” starts the day', async ({ page }) => {
+  // Override the shared beforeEach: this visitor has never opened the app.
+  await page.addInitScript(() => localStorage.removeItem('nl.welcomed'))
+  await page.goto('/')
+
+  // The welcome dialog introduces the app before anything asks of the visitor.
+  const dialog = page.getByRole('dialog', { name: 'Welcome to New Leaf' })
+  await expect(dialog).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Welcome to New Leaf' })).toBeVisible()
+  await expect(dialog.getByText(/stays on this device/)).toBeVisible()
+  // Each corner of the app is introduced once, in plain words.
+  await expect(dialog.getByText('My journey', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Urge tools', { exact: true })).toBeVisible()
+
+  // A tiny breathing circle is there to try before starting — tap it and the
+  // slow in/out breath begins.
+  const demo = dialog.getByRole('button', { name: 'Tap to try a slow breath' })
+  await expect(demo).toBeVisible()
+  await demo.click()
+  await expect(dialog.getByRole('button', { name: /^Breathe (in|out) \d+$/ })).toBeVisible()
+  await expect(dialog.getByText('Follow the circle. That’s all it asks.')).toBeVisible()
+
+  // Beginning gently dismisses the welcome and reveals the real Today screen.
+  // (Every other test starts as a returning visitor, so the “skips the
+  // welcome next time” path is covered implicitly.)
+  await page.getByRole('button', { name: /Begin gently/ }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('Your gentle note for today')).toBeVisible()
+})
+
+test('choosing a habit sets off a gentle one-time leaf burst for day one', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /Pornography/ }).first().click()
+
+  // The milestone card appears on the page as before…
+  await expect(page.getByText('Something to celebrate today')).toBeVisible()
+  // …and a short-lived leaf burst floats up around a quiet “Day 1” card.
+  const status = page.getByRole('status')
+  await expect(status).toBeVisible()
+  await expect(status.getByRole('heading', { name: 'Day 1' })).toBeVisible()
+  await expect(status.getByText(/Pornography/)).toBeVisible()
+
+  // The burst clears itself and never blocks the page beneath it.
+  await expect(status).toBeHidden({ timeout: 6000 })
+  await expect(page.getByText('Something to celebrate today')).toBeVisible()
+})
+
+test('reaching a milestone day bursts once on open, and not again on a reload', async ({ page }) => {
+  const anchor = dateKeyAgo(6) // six days ago makes today exactly day 7
+  await page.addInitScript(
+    ({ anchor }) => {
+      localStorage.setItem('nl.picks', JSON.stringify(['smoking']))
+      localStorage.setItem('nl.runs', JSON.stringify({ smoking: { anchor, best: 0 } }))
+    },
+    { anchor }
+  )
+
+  await page.goto('/')
+  const status = page.getByRole('status')
+  await expect(status.getByRole('heading', { name: 'Day 7' })).toBeVisible()
+  await expect(status).toBeHidden({ timeout: 6000 })
+
+  // The milestone was remembered, so a same-day reload does not re-celebrate.
+  await page.reload()
+  await expect(page.getByRole('status')).toHaveCount(0)
+})
+
+test.describe('phone layout', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('tabs live in a fixed bottom bar for one-hand use', async ({ page }) => {
+    await page.goto('/')
+
+    // At phone width only the bottom bar is exposed as the Main navigation;
+    // the desktop header nav is hidden rather than duplicated.
+    const bottomNav = page.getByRole('navigation', { name: 'Main' })
+    await expect(bottomNav).toHaveCount(1)
+    await expect(page.locator('.nav-bottom')).toBeVisible()
+    await expect(page.locator('.nav-top')).toBeHidden()
+
+    // Switching tabs from the bottom bar works on every destination.
+    await bottomNav.getByRole('button', { name: /My journey/ }).click()
+    await expect(page.getByText('A path begins with a single step — choose yours')).toBeVisible()
+
+    await bottomNav.getByRole('button', { name: /Today/ }).click()
+    await expect(page.getByText('Your gentle note for today')).toBeVisible()
+
+    await bottomNav.getByRole('button', { name: /Urge tools/ }).click()
+    await expect(page.getByRole('heading', { name: 'Urge tools' })).toBeVisible()
+  })
 })

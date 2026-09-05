@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">New Leaf</string>
+    <string name="splash_tap_hint">New Leaf — tap to open</string>
 </resources>

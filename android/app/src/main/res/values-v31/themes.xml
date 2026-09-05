@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- API 31+ adds a platform splash screen that shows before our window.
+         This is the same AppTheme with the system splash background pinned to
+         the app's warm cream (and the launcher's leaf as its icon), so cold
+         starts never flash a different colour on Android 12+. -->
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash</item>
         <!-- Edge-to-edge: bars are transparent, dark icons sit over the cream page. -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowSplashScreenBackground">@color/warm_cream</item>
     </style>
 </resources>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCountUp } from '../lib/animate.js'
 import { HABIT_BY_ID, HABITS } from '../data/habits.js'
 const HABIT_IDS = HABITS.map((h) => h.id)
 import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
@@ -11,6 +12,13 @@ import HabitPicker from './HabitPicker.jsx'
 function fmtAnchor(anchor) {
   const d = new Date(`${anchor}T00:00:00`)
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+// The streak number counts up when the card appears — a small sense of the
+// days adding themselves up, without any hype.
+function StreakNum({ value }) {
+  const shown = useCountUp(value)
+  return <>{shown}</>
 }
 
 // The reflection card for one month; all the wording lives in
@@ -208,7 +216,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
 
   if (picks.length === 0) {
     return (
-      <div className="fade-in" style={{ marginTop: 26 }}>
+      <div className="tab-view" style={{ marginTop: 26 }}>
         <Reflection today={today} picks={picks} runs={runs} checkins={checkins} monthKey={currentPrefix} past={false} />
         <KeepsakesShelf
           keepsakes={keepsakes}
@@ -231,7 +239,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
   }
 
   return (
-    <div className="fade-in" style={{ marginTop: 26 }}>
+    <div className="tab-view" style={{ marginTop: 26 }}>
       <section className="hero" style={{ marginBottom: 18 }}>
         <h1>My journey</h1>
         <p className="sub">
@@ -390,7 +398,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                 </div>
               ) : (
                 <div className="streak-big">
-                  {cur}
+                  <StreakNum value={cur} />
                   <span>{cur === 1 ? 'day' : 'days'} going strong</span>
                 </div>
               )}

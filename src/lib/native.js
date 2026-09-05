@@ -14,6 +14,46 @@ export function nativeTick() {
   }
 }
 
+/**
+ * Tells the native wrapper the first real frame of the app has been painted,
+ * so its splash can dissolve at exactly that moment instead of lifting early
+ * onto a blank page. When the in-page header logo is present, its CSS-px box
+ * is sent along so the splash leaf can fly up into the app bar. Fires after a
+ * double requestAnimationFrame — i.e. after at least one painted frame — and
+ * is a no-op on the web.
+ */
+export function notifyAppReady() {
+  if (
+    !isNativeApp() ||
+    (typeof window.AndroidNative.pageReady !== 'function' &&
+      typeof window.AndroidNative.pageReadyAt !== 'function')
+  )
+    return
+  let sent = false
+  const send = () => {
+    if (sent) return
+    sent = true
+    try {
+      const hasAt = typeof window.AndroidNative.pageReadyAt === 'function'
+      const logo = hasAt ? document.querySelector('.brand-mark svg') : null
+      if (logo) {
+        const r = logo.getBoundingClientRect()
+        window.AndroidNative.pageReadyAt(
+          Math.round(r.left),
+          Math.round(r.top),
+          Math.round(r.width),
+          Math.round(r.height),
+        )
+      } else if (typeof window.AndroidNative.pageReady === 'function') {
+        window.AndroidNative.pageReady()
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  requestAnimationFrame(() => requestAnimationFrame(send))
+}
+
 // ---- opt-in evening reminder (Android-only, fully on-device) ------------
 
 /** Turns the gentle evening reminder on/off at the given local 24h time. */
