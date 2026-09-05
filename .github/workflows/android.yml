@@ -59,6 +59,13 @@ jobs:
           ./gradlew assembleDebug --no-daemon
           ls -la app/build/outputs/apk/debug/
 
+      # Fail the build if this APK ever loses the motion/animation code (the
+      # welcome breathing demo, leaf burst, bottom-tab animation, splash
+      # handshake), so a future change can't silently ship a dull app.
+      - name: Verify the APK still carries the motion code
+        run: |
+          bash scripts/verify-apk-motion.sh android/app/build/outputs/apk/debug/app-debug.apk
+
       - name: Stage APK artifact
         run: |
           mkdir -p dist-apk
