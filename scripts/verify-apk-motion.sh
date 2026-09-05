@@ -22,7 +22,9 @@ unzip -q -o "$APK" -d "$tmp" || {
 
 js="$(ls "$tmp"/assets/www/assets/index-*.js 2>/dev/null | head -1 || true)"
 css="$(ls "$tmp"/assets/www/assets/index-*.css 2>/dev/null | head -1 || true)"
-dex="$(ls "$tmp"/classes*.dex 2>/dev/null | head -1 || true)"
+# App code may live in classes.dex, classes2.dex, ... (debug builds split), so
+# keep every dex file and search them all below.
+dexfiles="$(ls "$tmp"/classes*.dex 2>/dev/null || true)"
 
 fails=0
 check() {
@@ -36,6 +38,22 @@ check() {
     echo "  ok    $3"
   else
     echo "  FAIL  $3 — '$2' missing from $(basename "$1")"
+    fails=$((fails + 1))
+  fi
+}
+
+check_dex() {
+  # check_dex <needle> <what> — searches every classes*.dex
+  if [ -z "$dexfiles" ]; then
+    echo "  FAIL  $2 — no classes*.dex found in $APK"
+    fails=$((fails + 1))
+    return
+  fi
+  # shellcheck disable=SC2086 -- intentional word-splitting across dex paths
+  if grep -a -q -F -- "$1" $dexfiles; then
+    echo "  ok    $2"
+  else
+    echo "  FAIL  $2 — '$1' missing from the dex"
     fails=$((fails + 1))
   fi
 }
@@ -56,9 +74,9 @@ check "$css" '@keyframes tab'          'bottom tab bar animation'
 check "$css" '@keyframes card'         'card entrance animation'
 
 echo "Native wrapper (dex):"
-check "$dex" 'pageReadyAt'             'native splash flight bridge'
-check "$dex" 'noteCheckin'             'native check-in haptics bridge'
-check "$dex" 'AndroidNative'           'JS<->native bridge object'
+check_dex 'pageReadyAt'             'native splash flight bridge'
+check_dex 'noteCheckin'             'native check-in haptics bridge'
+check_dex 'AndroidNative'           'JS<->native bridge object'
 
 if [ "$fails" -gt 0 ]; then
   echo "verify-apk-motion: $fails check(s) failed — a future build dropped part of the motion/UI code."
