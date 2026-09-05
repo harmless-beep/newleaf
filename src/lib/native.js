@@ -4,6 +4,29 @@ export function isNativeApp() {
   return typeof window !== 'undefined' && !!window.AndroidNative
 }
 
+// Inside the wrapper the page mounts beneath an opaque native splash, so its
+// entrance animations would play out hidden and finish before the cream
+// lifts — leaving the first moments still. Hold every page animation (see the
+// html.nl-splash-hold rule in styles.css) until the wrapper reports that the
+// reveal has finished, then release them so the app arrives already moving.
+// Runs at module load, before the app's first render; never on the web.
+if (typeof document !== 'undefined' && isNativeApp()) {
+  document.documentElement.classList.add('nl-splash-hold')
+}
+
+/** The native wrapper calls this the moment the splash reveal completes. */
+export function releaseSplashMotion() {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.remove('nl-splash-hold')
+}
+
+// Native-side hook: MainActivity invokes this via evaluateJavascript after it
+// finishes revealing, so the entrance animations begin exactly as the cream
+// clears and the page becomes visible.
+if (typeof window !== 'undefined') {
+  window.__nlReleaseMotion = releaseSplashMotion
+}
+
 export function nativeTick() {
   try {
     if (isNativeApp() && typeof window.AndroidNative.tick === 'function') {

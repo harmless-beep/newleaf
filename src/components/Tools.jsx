@@ -511,7 +511,7 @@ export default function Tools({ seed = null }) {
         ))}
       </div>
 
-      <section className="card">
+      <section key={active} className="card">
         {active === 'breathe' && <Breathing key="breathe" />}
         {active === 'ground' && <Grounding key="ground" />}
         {active === 'ride' && <RideWave key="ride" />}

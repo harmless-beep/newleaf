@@ -65,6 +65,7 @@ check "$js" 'Breathe in'               'welcome breathing demo'
 check "$js" 'Breathe again'            'breathing demo completion state'
 check "$js" 'celebrated'               'milestone leaf-burst logic'
 check "$js" 'prefers-reduced-motion'   'reduced-motion respect'
+check "$js" 'nl-splash-hold'           'splash-aware entrance hold'
 check "$js" 'pageReadyAt'              'first-paint splash handshake'
 
 echo "Web bundle (CSS):"
@@ -72,6 +73,8 @@ check "$css" '@keyframes burst'        'milestone burst animation'
 check "$css" '@keyframes leaf'         'leaf motion animation'
 check "$css" '@keyframes tab'          'bottom tab bar animation'
 check "$css" '@keyframes card'         'card entrance animation'
+check "$css" '@keyframes sheetIn'      'overlay/sheet entrance animation'
+check "$css" '@keyframes gridIn'       'journey grid paging animation'
 
 echo "Native wrapper (dex):"
 check_dex 'pageReadyAt'             'native splash flight bridge'

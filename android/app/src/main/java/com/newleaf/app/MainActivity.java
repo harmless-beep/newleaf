@@ -152,6 +152,19 @@ public class MainActivity extends Activity {
         splashRoot.animate().cancel();
         splashRoot.setAlpha(1f);
         splashRoot.setVisibility(View.GONE);
+        releasePageMotion();
+    }
+
+    /**
+     * The page holds its entrance animations (html.nl-splash-hold) until the
+     * splash reveal finishes, so they play as the app becomes visible instead
+     * of finishing invisibly under the cream. Called the moment the cream
+     * starts clearing on every reveal path.
+     */
+    private void releasePageMotion() {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+            "try{window.__nlReleaseMotion&&window.__nlReleaseMotion()}catch(e){}", null);
     }
 
     /** Convenience: reveal without a header target (centre swell + dissolve). */
@@ -176,6 +189,7 @@ public class MainActivity extends Activity {
             Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
         if (animatorScale == 0f) {
             splashRoot.setVisibility(View.GONE);
+            releasePageMotion();
             return;
         }
 
@@ -247,6 +261,9 @@ public class MainActivity extends Activity {
             .setStartDelay(dissolveDelay)
             .setDuration(460)
             .setInterpolator(new DecelerateInterpolator(1.2f))
+            // As the cream begins to clear, release the page's held entrance
+            // animations so the app arrives already moving beneath it.
+            .withStartAction(() -> releasePageMotion())
             .withEndAction(
                 () -> {
                     splashRoot.setVisibility(View.GONE);

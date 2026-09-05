@@ -272,7 +272,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
 
         {stripView === 'week' ? (
           <>
-            <div className="week-strip" role="list" aria-label="Last seven days of moods and kept habits">
+            <div key={viewPrefix} className="week-strip" role="list" aria-label="Last seven days of moods and kept habits">
               {week.map((w) => (
                 <div key={w.key} className={`week-cell${w.key === today ? ' today' : ''}`} role="listitem" aria-label={w.label}>
                   <span className="week-day">{w.day}</span>
@@ -313,7 +313,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                 {new Date(vYear, vMonth, 1).toLocaleDateString(undefined, { month: 'short' })} ›
               </button>
             </div>
-            <div className="month-grid" role="grid" aria-label={`${viewName} moods and kept habits`}>
+            <div key={viewPrefix} className="month-grid" role="grid" aria-label={`${viewName} moods and kept habits`}>
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => (
                 <div key={w} className="month-head" role="columnheader">
                   {w}

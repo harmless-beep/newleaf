@@ -702,3 +702,27 @@ test.describe('phone layout', () => {
     await expect(page.getByRole('heading', { name: 'Urge tools' })).toBeVisible()
   })
 })
+
+test('the native-splash hold keeps entrance animations until the release moment', async ({ page }) => {
+  // In the Android wrapper the page mounts under the opaque splash. The app
+  // holds every animation (html.nl-splash-hold) and the wrapper releases it
+  // exactly as the cream clears — so the first moments arrive moving instead
+  // of having settled invisibly. The web never holds, so this simulates both
+  // halves of that contract against the real CSS.
+  await page.goto('/')
+  const section = page.locator('.tab-view > section').first()
+  await expect(section).toBeVisible()
+
+  // Wrapper boot: hold is on, so the card's entrance animation is suppressed.
+  await page.evaluate(() => document.documentElement.classList.add('nl-splash-hold'))
+  await expect
+    .poll(() => section.evaluate((el) => getComputedStyle(el).animationName))
+    .toBe('none')
+  expect(await section.evaluate((el) => el.getAnimations().length)).toBe(0)
+
+  // Reveal completes: the hold lifts and the entrance animation restarts.
+  await page.evaluate(() => document.documentElement.classList.remove('nl-splash-hold'))
+  await expect
+    .poll(() => section.evaluate((el) => el.getAnimations().map((a) => a.animationName)))
+    .toContain('cardIn')
+})

@@ -407,8 +407,24 @@ button {
 }
 
 .chip .check {
+  display: inline-block;
   font-size: 0.8rem;
   color: var(--tint);
+  animation: popIn 0.3s cubic-bezier(0.34, 1.5, 0.5, 1) both;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ---------- wind-down + one small step ---------- */
@@ -1417,6 +1433,7 @@ textarea.journal:focus {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
+  animation: fadeIn 0.35s ease both;
 }
 
 .reminder-times .chip {
@@ -2134,6 +2151,74 @@ textarea.journal:focus {
   margin: 0;
   font-size: 0.85rem;
   color: var(--ink-2);
+}
+
+/* While the native splash still covers the app (Android wrapper), the
+   page's entrance animations must not play out invisibly under the cream —
+   they would be finished by the time the splash lifts and the first moment
+   would feel still. The wrapper adds html.nl-splash-hold at boot and removes
+   it the instant the splash reveal finishes, so every animation starts as
+   the page actually becomes visible. The web never has this class. */
+html.nl-splash-hold *,
+html.nl-splash-hold *::before,
+html.nl-splash-hold *::after {
+  animation: none !important;
+}
+
+/* ---------- motion: the last still moments ---------- */
+
+/* Full-screen moments (keepsake view, celebration card) soften in instead of
+   snapping on: the scrim fades, the sheet settles up a touch. */
+.card-layer,
+.keepsake-layer {
+  animation: scrimIn 0.3s ease both;
+}
+
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.celebrate,
+.keepsake {
+  animation: sheetIn 0.45s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.keepsake-tools {
+  animation: fadeIn 0.45s ease 0.16s both;
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Journey's week strip and month grid breathe in again when you page to
+   another week or month (their containers are keyed, so they remount). */
+.week-strip,
+.month-grid {
+  animation: gridIn 0.4s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+}
+
+@keyframes gridIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ---------- reduced motion ---------- */
