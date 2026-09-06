@@ -1,6 +1,7 @@
 package com.newleaf.app;
 
 import android.app.AlarmManager;
+import android.os.Build;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -136,7 +137,11 @@ final class ReminderScheduler {
         // window keeps it close to the set hour while still being battery-kind.
         // (setInexactRepeating is deliberately avoided: it hands the system an
         // 18-hour window, so an "evening" nudge can arrive the next morning.)
-        if (am.canScheduleExactAlarms()) {
+        // canScheduleExactAlarms() only exists from API 31 (where the user
+        // toggle was introduced); below that exact alarms are simply allowed.
+        boolean exact =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms();
+        if (exact) {
             am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
         } else {
             am.setWindow(AlarmManager.RTC_WAKEUP, when, 10 * 60_000L, pi);

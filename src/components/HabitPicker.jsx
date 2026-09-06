@@ -1,4 +1,5 @@
 import { HABITS } from '../data/habits.js'
+import { nativeTick } from '../lib/native.js'
 
 // Multi-select chips for choosing which habits to work on.
 // Toggling off a selected chip simply removes it from the list —
@@ -17,7 +18,10 @@ export default function HabitPicker({ value, onToggle, available }) {
             className={`chip${selected ? ' selected' : ''}`}
             style={{ '--tint': h.tint }}
             aria-pressed={selected}
-            onClick={() => onToggle(h.id)}
+            onClick={() => {
+              nativeTick() // the pick answers the finger
+              onToggle(h.id)
+            }}
           >
             <span aria-hidden="true">{h.emoji}</span>
             {h.name}

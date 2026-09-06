@@ -9,6 +9,9 @@ const soilMound = 'M40,84 Q60,76 80,84 Z'
 function Pot() {
   return (
     <g>
+      {/* Static painted ground shadow — replaces a CSS drop-shadow() filter,
+          which would re-rasterize this SVG every animation frame. */}
+      <ellipse cx="60" cy="114" rx="30" ry="4.5" fill="rgba(110, 70, 30, 0.16)" />
       <path d={potBody} fill="url(#nl-pot)" />
       <path d={potBody} fill="none" stroke="#c9a97e" strokeWidth="1.6" strokeLinejoin="round" />
       <path d={soilMound} fill="#5f4a38" />

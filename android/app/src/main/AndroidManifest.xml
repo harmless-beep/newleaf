@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- New Leaf is fully offline: no INTERNET permission, nothing leaves the device. -->
 
@@ -30,6 +31,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Lets Android Studio's profiler attach to release builds too: CPU
+             and frame timelines can be inspected with the same tooling as a
+             debug build, without shipping debuggable. -->
+        <profileable
+            android:shell="true"
+            tools:targetApi="q" />
 
         <!-- Shows the gentle reminder when its alarm fires. -->
         <receiver

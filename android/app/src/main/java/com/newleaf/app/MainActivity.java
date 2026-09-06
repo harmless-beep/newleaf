@@ -75,6 +75,12 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMediaPlaybackRequiresUserGesture(true);
+        // The app owns its palette. Never let the system's force-dark pass
+        // recolour the cream design when the phone is in dark mode — that
+        // pass is also an extra render step on every frame on some OEMs.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            settings.setForceDark(WebSettings.FORCE_DARK_OFF);
+        }
 
         // Let debuggable builds be inspectable via chrome://inspect (release stays closed).
         if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
@@ -86,6 +92,13 @@ public class MainActivity extends Activity {
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
         webView.setBackgroundColor(Color.parseColor("#fffdf8"));
+
+        // Keep the renderer at foreground priority so compositor frames never
+        // throttle mid-animation — some OEM power handlers downgrade a
+        // WebView renderer the moment anything else takes focus (like the
+        // recent-apps snapshot), and the next frame budget then stutters.
+        webView.setRendererPriorityPolicy(
+            WebView.RENDERER_PRIORITY_IMPORTANT, /* sacrificedWhenVisible */ false);
 
         // ---- Haptics: the page calls AndroidNative.tick() on check-in taps.
         webView.addJavascriptInterface(new NativeBridge(), "AndroidNative");

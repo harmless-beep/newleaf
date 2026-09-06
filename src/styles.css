@@ -114,6 +114,14 @@ p {
   margin: 0 0 0.85em;
 }
 
+/* Android WebView renders at real device pixels — hint explicitly.
+   Prevents the slightly soft 'browser screenshot' text feel. */
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: contain; /* scroll never bounces the page itself */
+}
+
 button {
   font-family: inherit;
 }
@@ -168,8 +176,19 @@ button {
 
 /* Cards inside a freshly-mounted tab settle in one after another, like
    leaves unfurling — each a few frames behind the one above it. */
-.tab-view > section {
+/* The section cascade plays on the app's very first paint only. On tab
+   switches the keyed pane slide already carries the motion — stacking both
+   meant a pane slide *plus* every section animating again (13+ composited
+   layers at once = the janky burst after every tab tap). */
+.tab-pane.first-load .tab-view > section {
   animation: cardIn 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+/* Urge-tool switching keeps its own soft re-entry: the body section is keyed
+   by the active tool, so this rule re-fires on every tool change. */
+.tool-view > section,
+.tool-view section.card {
+  animation: cardIn 0.4s cubic-bezier(0.22, 0.8, 0.3, 1) both;
 }
 .tab-view > section:nth-of-type(1) { animation-delay: 0.03s; }
 .tab-view > section:nth-of-type(2) { animation-delay: 0.09s; }
@@ -184,6 +203,104 @@ button {
 .tab-view > section:nth-of-type(11) { animation-delay: 0.63s; }
 .tab-view > section:nth-of-type(12) { animation-delay: 0.69s; }
 .tab-view > section:nth-of-type(n + 13) { animation-delay: 0.75s; }
+
+/* ---------- tab panes: the page slides the way the bar points ----------
+   One keyed wrapper per tab; the incoming pane glides in from the side the
+   motion implies (left/right by tab order), with a soft settle. */
+
+.tab-pane {
+  animation: paneFwd 0.32s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.tab-pane.pane-back {
+  animation-name: paneBack;
+}
+
+@keyframes paneFwd {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes paneBack {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- scroll reveals: below-fold cards settle in as they arrive ----------
+   The hook tags cards below the fold .nl-pre at registration time (cards
+   mounted later — a freshly picked habit, an overlay — are never tagged and
+   simply use their normal entrance), then swaps .nl-pre for .nl-revealed
+   the first time the card scrolls into view. One-time, never on scroll-up. */
+
+.card.nl-pre {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: none; /* hold the section's base entrance until it is actually seen */
+}
+
+.card.nl-revealed:not(.nl-skip) {
+  animation: cardIn 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+}
+
+/* ---------- press ripple: every touch answers with a soft terracotta wash.
+   Pure CSS — the :active state snaps the halo in place, releasing it lets it
+   bloom and fade, which reads as the rippleAndroid users expect. ---------- */
+
+.btn,
+.nav button,
+.nav-bottom button,
+.chip {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after,
+.nav button::after,
+.nav-bottom button::after,
+.chip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(201, 111, 74, 0.28), rgba(201, 111, 74, 0.08) 55%, transparent 72%);
+  opacity: 0;
+  transform: scale(0.55);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+.btn:active::after,
+.nav button:active::after,
+.nav-bottom button:active::after,
+.chip:active::after {
+  opacity: 1;
+  transform: scale(1);
+  transition: none; /* appear instantly under the finger, bloom on release */
+}
+
+@keyframes tabPop {
+  0% {
+    transform: scale(0.82);
+  }
+  55% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
 @keyframes cardIn {
   from {
@@ -259,8 +376,11 @@ button {
   /* Below the transparent status bar once stuck. */
   top: var(--inset-top);
   z-index: 20;
-  backdrop-filter: blur(10px);
-  background: rgba(251, 243, 231, 0.86);
+  /* Nearly opaque on purpose: a translucent + blurred header re-filters the
+     whole backdrop every frame while content scrolls beneath it — the single
+     biggest WebView jank source. 0.97 alpha keeps a whisper of depth with
+     none of that cost. */
+  background: rgba(251, 243, 231, 0.97);
   border-bottom: 1px solid rgba(238, 220, 194, 0.7);
 }
 
@@ -609,7 +729,9 @@ button {
   flex: 0 0 auto;
   align-self: center;
   margin-right: 4px;
-  filter: drop-shadow(0 6px 8px rgba(110, 70, 30, 0.18));
+  /* No drop-shadow() here on purpose: it wraps the infinitely swaying plant,
+     so the SVG filter would re-rasterize every frame on every visible card.
+     The pot's painted ground shadow does this job statically instead. */
 }
 
 .growth-plant svg {
@@ -1895,8 +2017,8 @@ textarea.journal:focus {
     border-radius: 24px;
     padding: 6px;
     box-shadow: 0 14px 40px -18px rgba(110, 70, 30, 0.45), 0 2px 8px rgba(110, 70, 30, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    /* Same reasoning as the header: no always-on backdrop blur in WebView. */
+    background: rgba(251, 245, 234, 0.96);
   }
   .nav-bottom button {
     flex: 1 1 0;
@@ -1916,20 +2038,31 @@ textarea.journal:focus {
     font-weight: 600;
     line-height: 1.1;
     white-space: nowrap;
-    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.14s cubic-bezier(0.22, 0.8, 0.3, 1);
   }
   .nav-bottom button:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
   }
   .nav-bottom .tab-ico {
     font-size: 1.24rem;
     line-height: 1;
   }
   .nav-bottom button.active {
-    background: #fffdf8;
+    background: linear-gradient(180deg, #fffefb, #fdf5e7);
     color: var(--accent-deep);
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(110, 70, 30, 0.14);
+    box-shadow:
+      0 3px 10px rgba(110, 70, 30, 0.16),
+      inset 0 1px 0 #ffffff;
+  }
+  /* The chosen tab's icon springs — the touch answers back. */
+  .nav-bottom button.active .tab-ico {
+    animation: tabPop 0.38s cubic-bezier(0.22, 0.8, 0.3, 1);
   }
   .hero h1 {
     font-size: 1.6rem;

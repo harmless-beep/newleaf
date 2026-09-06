@@ -479,8 +479,7 @@ export default function Tools({ seed = null }) {
     if (seed) setActive(seed)
   }, [seed])
 
-  return (
-    <div className="tab-view" style={{ marginTop: 26 }}>
+  return (      <div className="tab-view tool-view" style={{ marginTop: 26 }}>
       <section className="hero" style={{ marginBottom: 16 }}>
         <h1>Urge tools</h1>
         <p className="sub">Small, real things you can do in the middle of a hard moment.</p>

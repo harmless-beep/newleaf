@@ -22,7 +22,7 @@ if (typeof document !== 'undefined' && isNativeApp()) {
     if (document.documentElement.classList.contains('nl-splash-hold')) {
       releaseSplashMotion()
     }
-  }, 2500)
+  }, 6000) // past native's worst case: 4s reveal safety net + retries
 }
 
 /** The native wrapper calls this the moment the splash reveal completes. */

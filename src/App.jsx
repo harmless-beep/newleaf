@@ -12,6 +12,7 @@ import ReminderCard from './components/ReminderCard.jsx'
 import Welcome from './components/Welcome.jsx'
 import LeafLogo from './components/Logo.jsx'
 import { nativeTick, notifyAppReady } from './lib/native.js'
+import { useScrollReveal } from './lib/animate.js'
 import { playChime } from './lib/sound.js'
 import { prefersReducedMotion } from './lib/animate.js'
 import { HABIT_BY_ID } from './data/habits.js'
@@ -61,10 +62,30 @@ export default function App() {
     notifyAppReady()
   }, [])
 
+  // Tab order drives the direction of the pane transition: moving right in
+  // the bar slides the page in from the right, like Android's own nav.
+  const TAB_ORDER = ['today', 'journey', 'tools']
+  const [tabDir, setTabDir] = useState(1)
+  // True until the user's first tab switch: the section cascade plays only on
+  // the initial paint, so tab switches carry one clean pane slide instead of
+  // a pane slide *plus* every section animating again.
+  const [firstLoad, setFirstLoad] = useState(true)
+
   const go = (nextTab, subTool) => {
+    const from = TAB_ORDER.indexOf(tab)
+    const to = TAB_ORDER.indexOf(nextTab)
+    if (to !== from) {
+      setTabDir(to > from ? 1 : -1)
+      setFirstLoad(false)
+      nativeTick() // the tab answers the touch
+    }
     setTab(nextTab)
     if (subTool) setToolSeed(subTool)
   }
+
+  // Cards below the fold settle in as they scroll into view. Re-armed per
+  // tab so each pane's lower content gets the treatment.
+  useScrollReveal(tab)
 
   // A truly first-time visitor (no data at all yet) gets one warm welcome;
   // anyone returning to existing data skips straight to Today.
@@ -226,6 +247,7 @@ export default function App() {
       </nav>
 
       <main>
+        <div key={tab} className={`tab-pane ${tabDir > 0 ? 'pane-fwd' : 'pane-back'} ${firstLoad ? 'first-load' : ''}`}>
         {tab === 'today' && (
           <Today
             key="today"
@@ -259,6 +281,7 @@ export default function App() {
           />
         )}
         {tab === 'tools' && <Tools key="tools" seed={toolSeed} />}
+        </div>
       </main>
 
       {keepsake && <Keepsake prefix={keepsake} keepsakes={keepsakes} onClose={() => setKeepsake(null)} />}
