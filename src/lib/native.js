@@ -12,6 +12,17 @@ export function isNativeApp() {
 // Runs at module load, before the app's first render; never on the web.
 if (typeof document !== 'undefined' && isNativeApp()) {
   document.documentElement.classList.add('nl-splash-hold')
+  // Self-healing watchdog: the wrapper normally releases the hold itself the
+  // moment the reveal completes, but that call can be lost — an early
+  // tap-to-skip before this module has evaluated, the safety-net path, any
+  // evaluateJavascript racing page load. If the hold is somehow still on
+  // after the splash could have finished, drop it here so the app can never
+  // sit frozen without its motion.
+  setTimeout(() => {
+    if (document.documentElement.classList.contains('nl-splash-hold')) {
+      releaseSplashMotion()
+    }
+  }, 2500)
 }
 
 /** The native wrapper calls this the moment the splash reveal completes. */

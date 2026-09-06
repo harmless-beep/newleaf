@@ -66,6 +66,7 @@ check "$js" 'Breathe again'            'breathing demo completion state'
 check "$js" 'celebrated'               'milestone leaf-burst logic'
 check "$js" 'prefers-reduced-motion'   'reduced-motion respect'
 check "$js" 'nl-splash-hold'           'splash-aware entrance hold'
+check "$js" 'contains("nl-splash-hold")' 'entrance-hold self-heal watchdog'
 check "$js" 'pageReadyAt'              'first-paint splash handshake'
 
 echo "Web bundle (CSS):"

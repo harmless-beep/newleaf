@@ -160,11 +160,27 @@ public class MainActivity extends Activity {
      * splash reveal finishes, so they play as the app becomes visible instead
      * of finishing invisibly under the cream. Called the moment the cream
      * starts clearing on every reveal path.
+     *
+     * The release is confirmed: the page answers "nl-hold=1|0", and if it is
+     * still holding (this call raced the page load — early tap-to-skip, slow
+     * first paint, safety net) we retry shortly so the hold can never get
+     * stranded with every animation suppressed.
      */
     private void releasePageMotion() {
+        releasePageMotion(0);
+    }
+
+    private void releasePageMotion(final int attempt) {
         if (webView == null) return;
         webView.evaluateJavascript(
-            "try{window.__nlReleaseMotion&&window.__nlReleaseMotion()}catch(e){}", null);
+            "try{window.__nlReleaseMotion&&window.__nlReleaseMotion()}catch(e){};"
+                + "document.documentElement.classList.contains('nl-splash-hold')",
+            value -> {
+                boolean stillHeld = value != null && value.contains("true");
+                if (stillHeld && attempt < 3) {
+                    webView.postDelayed(() -> releasePageMotion(attempt + 1), 400);
+                }
+            });
     }
 
     /** Convenience: reveal without a header target (centre swell + dissolve). */
