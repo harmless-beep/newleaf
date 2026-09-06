@@ -75,6 +75,14 @@ as the web version.
   away from this machine. Those APKs are debug-signed, so installing
   over an older, differently-signed APK requires uninstalling first
   (which clears the app's on-device data).
+- **CI quality gates** (both must pass on every push):
+  - *Motion guard* — `scripts/verify-apk-motion.sh` inspects the built APK
+    (bundle + dex) and fails if the animation code (splash flight, breathing
+    demo, leaf burst, morph, pager, haptics) ever goes missing.
+  - *Perf budget* — `scripts/check-perf-budget.sh` fails if the payload
+    outgrows its limits: APK ≤ 4 MiB, JS bundle ≤ 96 KiB and CSS ≤ 12 KiB
+    (gzip'd), fonts ≤ 1.53 MiB. Limits live at the top of the script; raise
+    one only on purpose, with a note in the commit message.
 - **Build it yourself**: `cd android && ./gradlew assembleRelease`
   (needs the Android SDK and Java 17). The signed APK lands in
   `android/app/build/outputs/apk/release/`.
