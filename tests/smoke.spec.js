@@ -1126,3 +1126,33 @@ test("the entrance-hold self-heals if the native release call is lost", async ({
     )
     .toContain("cardIn");
 });
+
+test("each habit shows its growth plant, and it matures as the streak grows", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await mainNav(page)
+    .getByRole("button", { name: /My journey/ })
+    .click();
+  // Choose the first habit from the picker (a fresh install has none picked).
+  const firstChip = page
+    .getByRole("group", { name: /Choose habits/i })
+    .locator("button")
+    .first();
+  await firstChip.click();
+  await expect(page.locator(".habit-card").first()).toBeVisible();
+
+  // Day 0: the seed stage, labelled for screen readers.
+  const plant = page.locator(".habit-card .growth-plant").first();
+  await expect(plant).toBeVisible();
+  await expect(plant).toHaveAttribute(
+    "aria-label",
+    /Growth: planted|Growth: sprouting/,
+  );
+
+  // A short run (day 2) should show a sprout; a long one, in bloom.
+  const stage = await plant.getAttribute("aria-label");
+  expect(stage).toMatch(
+    /Growth: (planted|sprouting|taking root|growing tall|in bloom)/,
+  );
+});

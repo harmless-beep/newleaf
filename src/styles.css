@@ -1,4 +1,35 @@
 /* ============================================================
+   Typography — bundled, professional, fully offline.
+   Fraunces (display serif, soft optical axis) carries the voice;
+   Nunito Sans (humanist sans) carries the detail. Nothing is
+   fetched at runtime: the app stays private and offline-first.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('./fonts/Fraunces-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('./fonts/Fraunces-Italic-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('./fonts/NunitoSans-Variable.ttf') format('truetype-variations');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    New Leaf — a warm, accepting design system
    Cream, terracotta, honey and sage. Soft edges. No harshness.
    ============================================================ */
@@ -20,8 +51,13 @@
   --sage: #7d9c63;
   --shadow: 0 1px 2px rgba(110, 70, 30, 0.05), 0 10px 24px -12px rgba(110, 70, 30, 0.18);
   --radius: 18px;
-  --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
-  --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: 'Fraunces', Georgia, 'Iowan Old Style', serif;
+  --sans: 'Nunito Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --shadow-card:
+    0 1px 2px rgba(110, 70, 30, 0.06),
+    0 4px 10px -4px rgba(110, 70, 30, 0.08),
+    0 14px 32px -14px rgba(110, 70, 30, 0.2);
+  --shadow-card-rest: 0 1px 2px rgba(110, 70, 30, 0.05), 0 10px 24px -12px rgba(110, 70, 30, 0.18);
 }
 
 * {
@@ -46,14 +82,32 @@ body {
   min-height: 100vh;
 }
 
+/* A whisper of paper grain and a warm vignette over the whole app —
+   what separates a flat color field from something that feels printed. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(rgba(70, 53, 42, 0.035) 1px, transparent 1.3px),
+    radial-gradient(120% 90% at 50% 0%, transparent 60%, rgba(110, 70, 30, 0.07) 100%);
+  background-size:
+    23px 23px,
+    100% 100%;
+}
+
 h1,
 h2,
 h3 {
   font-family: var(--serif);
-  font-weight: 600;
-  line-height: 1.25;
+  font-weight: 590;
+  font-variation-settings: 'SOFT' 60, 'opsz' 40;
+  font-feature-settings: 'liga' 1, 'dlig' 1, 'kern' 1;
+  line-height: 1.22;
   margin: 0 0 0.5em;
-  letter-spacing: 0.005em;
+  letter-spacing: 0.002em;
 }
 
 p {
@@ -256,6 +310,7 @@ button {
   background: rgba(240, 224, 202, 0.55);
   padding: 4px;
   border-radius: 999px;
+  box-shadow: inset 0 1px 3px rgba(110, 70, 30, 0.08), inset 0 -1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .nav button {
@@ -263,7 +318,8 @@ button {
   background: transparent;
   color: var(--ink-2);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   padding: 7px 14px;
   border-radius: 999px;
   cursor: pointer;
@@ -276,9 +332,11 @@ button {
 }
 
 .nav button.active {
-  background: #fffdf8;
+  background: linear-gradient(180deg, #fffefb, #fdf6ea);
   color: var(--accent-deep);
-  box-shadow: 0 1px 4px rgba(110, 70, 30, 0.16);
+  box-shadow:
+    0 1px 4px rgba(110, 70, 30, 0.16),
+    inset 0 1px 0 #ffffff;
 }
 
 /* Phone-only bottom tab bar (hidden on wide screens; the top nav hides on
@@ -290,11 +348,13 @@ button {
 /* ---------- cards ---------- */
 
 .card {
-  background: var(--card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 42%),
+    var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   padding: 22px 24px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-card);
   margin-bottom: 18px;
 }
 
@@ -315,7 +375,9 @@ button {
 /* ---------- hero + daily message ---------- */
 
 .hero h1 {
-  font-size: 2rem;
+  font-size: 2.3rem;
+  font-weight: 620;
+  font-variation-settings: 'SOFT' 80, 'opsz' 60, 'WONK' 1;
   margin-bottom: 6px;
 }
 
@@ -542,6 +604,33 @@ button {
   margin-bottom: 10px;
 }
 
+/* The growth plant sits beside the streak number, gently swaying. */
+.growth-plant {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-right: 4px;
+  filter: drop-shadow(0 6px 8px rgba(110, 70, 30, 0.18));
+}
+
+.growth-plant svg {
+  display: block;
+}
+
+.nl-sway {
+  transform-origin: 60px 84px;
+  animation: nl-sway 5.2s ease-in-out infinite;
+}
+
+@keyframes nl-sway {
+  0%,
+  100% {
+    transform: rotate(-1.1deg);
+  }
+  50% {
+    transform: rotate(1.4deg);
+  }
+}
+
 .streak-big {
   font-family: var(--serif);
   font-size: 2.4rem;
@@ -671,17 +760,25 @@ button {
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 0.8, 0.3, 1),
+    background 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.955);
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+  background: linear-gradient(180deg, #d3794f 0%, var(--accent) 45%, var(--accent-deep) 100%);
   color: #fffaf2;
-  box-shadow: 0 3px 10px -3px rgba(176, 92, 57, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 4px 12px -4px rgba(176, 92, 57, 0.6),
+    0 10px 26px -10px rgba(176, 92, 57, 0.45);
+  text-shadow: 0 1px 1px rgba(122, 55, 30, 0.28);
 }
 
 .btn-primary:hover {

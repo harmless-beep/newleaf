@@ -12,6 +12,7 @@ import ReminderCard from './components/ReminderCard.jsx'
 import Welcome from './components/Welcome.jsx'
 import LeafLogo from './components/Logo.jsx'
 import { nativeTick, notifyAppReady } from './lib/native.js'
+import { playChime } from './lib/sound.js'
 import { prefersReducedMotion } from './lib/animate.js'
 import { HABIT_BY_ID } from './data/habits.js'
 
@@ -124,8 +125,8 @@ export default function App() {
       setCelebrated({ ...celebrated, [id]: cur })
       if (prefersReducedMotion()) return // the page card already says it warmly
       setBurst({ day: cur, habitName: habit.name, habitEmoji: habit.emoji })
+      playChime()
       nativeTick()
-      return
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [picks, runs, celebrated])

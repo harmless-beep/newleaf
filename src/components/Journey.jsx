@@ -8,6 +8,7 @@ import { dayMood } from '../lib/checkins.js'
 import { reflectionText } from '../lib/reflection.js'
 import { monthLabel } from '../lib/keepsakes.js'
 import HabitPicker from './HabitPicker.jsx'
+import GrowthPlant from './GrowthStages.jsx'
 
 function fmtAnchor(anchor) {
   const d = new Date(`${anchor}T00:00:00`)
@@ -389,6 +390,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
             </div>
 
             <div className="streak-row">
+              <GrowthPlant streak={cur} size={84} />
               {cur === 0 ? (
                 <div className="streak-big" style={{ fontSize: '1.7rem', lineHeight: 1.2 }}>
                   A fresh start

@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Cream splash that sits above the loading WebView. Mirrors the theme's
      window background exactly (same color, same @dimen/splash_leaf, same
-     @drawable/ic_leaf_mark, both centred) so the hand-off is seamless on
-     every screen size. The leaf mark swells, then the overlay dissolves to
-     reveal the page beneath. -->
+     @drawable/ic_leaf_mark, both centred, same halo) so the hand-off is
+     seamless on every screen size. The leaf mark swells, then the overlay
+     dissolves to reveal the page beneath. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/splash_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/warm_cream">
+
+    <!-- soft warm halo behind the leaf, so the splash reads as one glowing object -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/splash_glow"
+        android:importantForAccessibility="no" />
 
     <FrameLayout
         android:id="@+id/splash_leaf"

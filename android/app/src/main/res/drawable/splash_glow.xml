@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A soft warm glow that sits behind the splash leaf — the same halo the
+     in-page header logo carries, so the hand-off reads as one continuous
+     object rather than two different drawings. Pure vector; costs nothing. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="62%p"
+        android:centerX="0.5"
+        android:centerY="0.42"
+        android:startColor="#66F2E3C8"
+        android:endColor="#00F2E3C8" />
+</shape>

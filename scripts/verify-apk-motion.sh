@@ -76,6 +76,30 @@ check "$css" '@keyframes tab'          'bottom tab bar animation'
 check "$css" '@keyframes card'         'card entrance animation'
 check "$css" '@keyframes sheetIn'      'overlay/sheet entrance animation'
 check "$css" '@keyframes gridIn'       'journey grid paging animation'
+check "$css" '@keyframes nl-sway'      'growth plant sway animation'
+check "$css" 'Fraunces'             'display font face declared'
+
+echo "Bundled premium assets:"
+fonts=$(ls "$tmp"/assets/www/assets/Fraunces-Variable-*.ttf "$tmp"/assets/www/assets/NunitoSans-Variable-*.ttf 2>/dev/null || true)
+if [ -n "$fonts" ]; then
+  echo "  ok    bundled display + body fonts (Fraunces, Nunito Sans)"
+else
+  echo "  FAIL  bundled fonts missing — typography fell back to system fonts"
+  fails=$((fails + 1))
+fi
+chime=$(ls "$tmp"/assets/www/assets/chime-*.mp3 2>/dev/null | head -1 || true)
+if [ -n "$chime" ]; then
+  echo "  ok    milestone chime audio"
+else
+  echo "  FAIL  milestone chime audio missing"
+  fails=$((fails + 1))
+fi
+if grep -a -q -F 'Growth:' "$js"; then
+  echo "  ok    growth-stage plant artwork"
+else
+  echo "  FAIL  growth-stage plant artwork missing"
+  fails=$((fails + 1))
+fi
 
 echo "Native wrapper (dex):"
 check_dex 'pageReadyAt'             'native splash flight bridge'

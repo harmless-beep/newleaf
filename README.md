@@ -66,7 +66,7 @@ that loads the same site from the app's own files, so it works fully
 offline with no INTERNET permission. Data stays on your device, same
 as the web version.
 
-- **Install the APK**: grab `NewLeaf-1.1.2.apk` from the repo root,
+- **Install the APK**: grab `NewLeaf-1.2.0.apk` from the repo root,
   copy it to your phone, and open it (allow "install unknown apps"
   when prompted). Requires Android 8.0+.
 - **Latest CI build**: every push to `main` rebuilds the app and
