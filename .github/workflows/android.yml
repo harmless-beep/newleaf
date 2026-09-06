@@ -19,6 +19,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Rolling trend for the perf budget: each run restores the previous
+      # run's size numbers (never a primary-key hit, so it always re-saves),
+      # letting every build show its delta against the last one.
+      - name: Restore the last build's size numbers
+        uses: actions/cache@v4
+        with:
+          path: perf-history.json
+          key: perf-history-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: perf-history-${{ runner.os }}-${{ github.ref_name }}-
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -69,7 +79,11 @@ jobs:
       # Fail the build if the payload outgrows its budget (APK bytes, gzip'd
       # JS/CSS, font weight) — keeps the app light by default. Limits live in
       # scripts/check-perf-budget.sh; raise them consciously, never silently.
+      # Also appends a size report (with Δ vs the last build) to the job summary.
       - name: Enforce the perf budget (size of APK and bundles)
+        env:
+          PERF_HISTORY: perf-history.json
+          PERF_SHA: ${{ github.sha }}
         run: |
           bash scripts/check-perf-budget.sh android/app/build/outputs/apk/debug/app-debug.apk dist
 
