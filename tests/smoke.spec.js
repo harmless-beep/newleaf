@@ -1159,3 +1159,53 @@ test("each habit shows its growth plant, and it matures as the streak grows", as
     /Growth: (planted|sprouting|taking root|growing tall|in bloom)/,
   );
 });
+
+test("tapping a habit card morphs it into a full view and back", async ({ page }) => {
+  await page.goto("/");
+  await mainNav(page).getByRole("button", { name: /My journey/ }).click();
+  const firstChip = page
+    .getByRole("group", { name: /Choose habits/i })
+    .locator("button")
+    .first();
+  await firstChip.click();
+  const card = page.locator(".habit-card").first();
+  await expect(card).toBeVisible();
+  // Tap the card head — the detail layer morphs out of the card's footprint.
+  await card.locator("button.habit-head").click();
+  const detail = page.locator(".habit-detail");
+  await expect(detail).toBeVisible();
+  await expect(detail.locator(".detail-strip .strip-day")).toHaveCount(14);
+  // Closing plays the reverse morph, then the card is back.
+  await detail.locator(".detail-close").click();
+  await expect(detail).toHaveCount(0);
+  await expect(card).toBeVisible();
+});
+
+test("hardware back closes the topmost overlay, and truly exits when none is open", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await mainNav(page).getByRole("button", { name: /My journey/ }).click();
+  const firstChip = page
+    .getByRole("group", { name: /Choose habits/i })
+    .locator("button")
+    .first();
+  await firstChip.click();
+  const card = page.locator(".habit-card").first();
+  await expect(card).toBeVisible();
+
+  // With nothing open, the wrapper's back hook reports "not consumed".
+  const free = await page.evaluate(() => window.__nlAndroidBack());
+  expect(free).toBe(false);
+
+  // Open the morph, then simulate the native onBackPressed bridge call.
+  await card.locator("button.habit-head").click();
+  await expect(page.locator(".habit-detail")).toBeVisible();
+  const consumed = await page.evaluate(() => window.__nlAndroidBack());
+  expect(consumed).toBe(true);
+  await expect(page.locator(".habit-detail")).toHaveCount(0);
+
+  // The stack must drain as overlays unmount: back is free again.
+  const freeAgain = await page.evaluate(() => window.__nlAndroidBack());
+  expect(freeAgain).toBe(false);
+});

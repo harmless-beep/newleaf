@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { registerBackHandler } from '../lib/back.js'
 import { HABIT_BY_ID } from '../data/habits.js'
 import { MILESTONE_BY_DAY, MOOD_BY_ID } from '../data/wisdom.js'
 import { dayMood } from '../lib/checkins.js'
@@ -128,6 +129,9 @@ export default function CelebrateCard({ spec, keepsakes = {}, onClose }) {
     if (spec.kind === 'streak') drawStreakCard(canvas, data.canvas)
     else drawMonthCard(canvas, data.canvas)
   }, [spec, data])
+
+  // Android hardware back closes this card like a native dialog.
+  useEffect(() => registerBackHandler(onClose), [onClose])
 
   const download = () => {
     const canvas = canvasRef.current

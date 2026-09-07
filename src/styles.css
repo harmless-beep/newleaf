@@ -2464,3 +2464,353 @@ html.nl-splash-hold *::after {
     transition-delay: 0s !important;
   }
 }
+
+/* ============================================================
+   Habit detail — the card morphs into this full-screen layer
+   (shared-element style, via lib/morph.js). Same visual DNA as
+   the card: same tint, plant, and streak number, more room.
+   ============================================================ */
+
+.habit-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(120% 70% at 50% 0%, var(--tint-bg) 0%, transparent 60%),
+    var(--bg);
+  padding: calc(18px + var(--inset-top)) 18px calc(24px + var(--inset-bottom));
+  will-change: opacity;
+}
+
+/* Open: the sheet scales up from the card's footprint (morph.js sets the
+   custom properties) while the layer fades in over the page. */
+@keyframes detailIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes detailSheetIn {
+  from {
+    opacity: 0.4;
+    transform: translate(var(--mx, 0px), var(--my, 0px)) scale(var(--ms, 1));
+    border-radius: 18px;
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    border-radius: 24px;
+  }
+}
+
+/* Stage classes come from HabitDetail's FLIP lifecycle (lib of one: measure
+   hidden → play open → play closing → unmount). */
+.habit-detail.enter {
+  opacity: 0;
+}
+
+.detail-sheet.enter {
+  opacity: 0;
+}
+
+.habit-detail.open {
+  animation: detailIn var(--nl-morph, 0.42s) cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.detail-sheet.open {
+  animation: detailSheetIn var(--nl-morph, 0.42s) cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+/* A distinct name (not detailIn reversed) — changing direction on a finished
+   animation is unreliable across engines, but a new animation-name always
+   restarts, so the close fade and its animationend are guaranteed. */
+.habit-detail.closing {
+  animation: detailOut var(--nl-morph, 0.32s) cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+
+@keyframes detailOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.detail-sheet.closing {
+  animation: detailSheetOut var(--nl-morph, 0.32s) cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+
+@keyframes detailSheetOut {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0.4;
+    transform: translate(var(--mx, 0px), var(--my, 0px)) scale(var(--ms, 0.96));
+    border-radius: 18px;
+  }
+}
+
+.detail-close {
+  position: absolute;
+  top: calc(14px + var(--inset-top));
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 1.4rem;
+  line-height: 1;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.detail-close:active {
+  transform: scale(0.92);
+}
+
+.detail-hero {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 30px 24px 22px;
+  text-align: center;
+  box-shadow: 0 24px 70px -26px rgba(110, 70, 30, 0.45);
+  animation: cardIn 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.detail-streak {
+  font-family: var(--serif);
+  font-size: 3.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.05;
+  margin: 10px 0 6px;
+}
+
+.detail-streak span {
+  display: block;
+  font-family: var(--sans);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+.detail-since {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-3);
+}
+
+.detail-milestone-note {
+  margin: 14px 2px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(224, 166, 62, 0.16);
+  animation: cardIn 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) 0.12s both;
+}
+
+.detail-section {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 18px 18px 16px;
+  margin-top: 14px;
+  animation: cardIn 0.5s cubic-bezier(0.22, 0.6, 0.3, 1) both;
+}
+
+.detail-section:nth-of-type(1) { animation-delay: 0.1s; }
+.detail-section:nth-of-type(2) { animation-delay: 0.16s; }
+.detail-section:nth-of-type(3) { animation-delay: 0.22s; }
+
+.detail-section h4 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+}
+
+/* Milestone ladder: every rung, honestly marked reached or ahead. */
+.detail-ladder {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.detail-ladder li {
+  display: grid;
+  grid-template-columns: 26px 64px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(238, 220, 194, 0.8);
+  color: var(--ink-3);
+}
+
+.detail-ladder li:last-child {
+  border-bottom: none;
+}
+
+.detail-ladder li.reached {
+  color: var(--ink-2);
+}
+
+.detail-ladder .rung {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  border: 1px solid var(--card-border);
+  background: var(--bg-2);
+  align-self: center;
+}
+
+.detail-ladder li.reached .rung {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: #fff;
+}
+
+.detail-ladder .rung-day {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.detail-ladder .rung-text {
+  font-size: 0.88rem;
+}
+
+/* Two-week strip: one soft cell per day; kept days filled, moods as faces. */
+.detail-strip {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.strip-day {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  border: 1px solid var(--card-border);
+  background: var(--bg-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.strip-day.kept {
+  background: rgba(125, 156, 99, 0.2);
+  border-color: rgba(125, 156, 99, 0.55);
+}
+
+@media (max-width: 420px) {
+  .detail-strip {
+    gap: 4px;
+  }
+  .strip-day {
+    width: calc((100% - 6 * 4px) / 7);
+    aspect-ratio: 1;
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .habit-detail,
+  .detail-sheet,
+  .detail-hero,
+  .detail-section,
+  .detail-milestone-note {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ---------- habit card as a native-style tappable surface ---------- */
+
+/* The card head became a <button> for accessibility; reset it back to the
+   exact layout it had as a div, plus native-app press feedback. */
+button.habit-head {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.habit-head:active .habit-icon {
+  transform: scale(0.92);
+}
+
+.habit-icon {
+  transition: transform 0.15s ease;
+}
+
+/* The little chevron that says "this opens" — quiet until touched. */
+.habit-open-hint {
+  align-self: center;
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 1.05rem;
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+button.habit-head:active .habit-open-hint {
+  transform: rotate(-90deg) translateX(-2px);
+  color: var(--accent);
+}
+
+.habit-card:active {
+  transform: scale(0.995);
+}
+
+/* ============================================================
+   Physical scrolling — momentum stays with the finger's surface,
+   edges glow nowhere, and the month pager drags like a ViewPager.
+   ============================================================ */
+
+/* Fixed overlay scrollers (keepsake, celebration, welcome, detail): contain
+   their overscroll so a fling that hits their end never chains into the page
+   behind (and never lights the system edge glow over a dimmed scrim). */
+.keepsake-layer,
+.card-layer,
+.welcome-layer {
+  overscroll-behavior: contain;
+}
+
+/* The month pager: we own horizontal pans (see lib/pager.js), the page keeps
+   vertical momentum scrolling. During a captured drag the browser's own
+   text selection / image drag is silenced. */
+.pager-viewport {
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.pager-viewport.pager-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.pager-viewport .month-grid {
+  will-change: transform;
+}

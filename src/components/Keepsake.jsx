@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MOOD_BY_ID } from '../data/wisdom.js'
 import { dayMood } from '../lib/checkins.js'
 import { reflectionText } from '../lib/reflection.js'
 import { dateKey, streakFor } from '../lib/streaks.js'
+import { registerBackHandler } from '../lib/back.js'
 
 // Everything the keepsake shows is read straight from this device's storage —
 // nothing ever leaves it. The page prints with its own @media print styling,
@@ -28,6 +29,8 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function Keepsake({ prefix, keepsakes = {}, onClose }) {
   const [{ picks, runs, checkins, journal }] = useState(readAll)
+  // Android hardware back closes this layer like a native screen.
+  useEffect(() => registerBackHandler(onClose), [onClose])
   const pad = (n) => String(n).padStart(2, '0')
   const today = dateKey()
   const [y, m] = prefix.split('-').map(Number)

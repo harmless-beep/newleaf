@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCountUp } from '../lib/animate.js'
 import { HABIT_BY_ID, HABITS } from '../data/habits.js'
 const HABIT_IDS = HABITS.map((h) => h.id)
@@ -9,6 +9,10 @@ import { reflectionText } from '../lib/reflection.js'
 import { monthLabel } from '../lib/keepsakes.js'
 import HabitPicker from './HabitPicker.jsx'
 import GrowthPlant from './GrowthStages.jsx'
+import HabitDetail from './HabitDetail.jsx'
+import { cardRect } from '../lib/morph.js'
+import { attachPager } from '../lib/pager.js'
+import { nativeTick } from '../lib/native.js'
 
 function fmtAnchor(anchor) {
   const d = new Date(`${anchor}T00:00:00`)
@@ -138,6 +142,7 @@ function KeepsakesShelf({ keepsakes, today, canBrowse, onOpen, onPdf }) {
 
 export default function Journey({ picks, runs, checkins, stripView = 'week', setStripView = () => {}, journeyMonth = null, setJourneyMonth = () => {}, keepsakes = {}, addHabit, removeHabit, slipHabit, onKeepsake = () => {}, onCelebrate = () => {} }) {
   const [confirm, setConfirm] = useState(null) // { id, type: 'slip' | 'remove' }
+  const [detail, setDetail] = useState(null) // { id, rect } while the full view is morphed open
   const today = dateKey()
   const currentPrefix = today.slice(0, 7)
 
@@ -213,6 +218,37 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
   const backToWeek = () => {
     setStripView('week')
     setJourneyMonth(null)
+  }
+
+  // Month pager: horizontal drag with real physics (lib/pager.js). The ref
+  // keeps the always-fresh "can go next" answer without re-binding handlers.
+  const pagerRef = useRef(null)
+  const viewPastRef = useRef(viewPast)
+  viewPastRef.current = viewPast
+  useEffect(() => {
+    if (stripView !== 'month') return undefined
+    const el = pagerRef.current
+    if (!el) return undefined
+    return attachPager(el, {
+      onNext: () => goMonth(1),
+      onPrev: () => goMonth(-1),
+      canNext: () => viewPastRef.current,
+      canPrev: () => true,
+    })
+  }, [stripView, viewPrefix])
+
+  // Shared-element-style open: capture the tapped card's rect so the detail
+  // layer can morph out of the card's exact footprint (HabitDetail + morph.js).
+  const openDetail = (id, e) => {
+    const card = e.currentTarget.closest('.habit-card')
+    nativeTick() // the touch is answered before the morph even starts
+    setDetail({ id, rect: card ? cardRect(card) : null })
+  }
+  // Whole-card tap target, but taps on real controls (slip/remove, celebrate,
+  // disclosure, links) keep working as themselves.
+  const cardTap = (id) => (e) => {
+    if (e.target.closest('button, a, input, textarea, select, summary, [role="alertdialog"]')) return
+    openDetail(id, e)
   }
 
   if (picks.length === 0) {
@@ -314,7 +350,8 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                 {new Date(vYear, vMonth, 1).toLocaleDateString(undefined, { month: 'short' })} ›
               </button>
             </div>
-            <div key={viewPrefix} className="month-grid" role="grid" aria-label={`${viewName} moods and kept habits`}>
+            <div ref={pagerRef} className="pager-viewport">
+              <div key={viewPrefix} className="month-grid" role="grid" aria-label={`${viewName} moods and kept habits`}>
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => (
                 <div key={w} className="month-head" role="columnheader">
                   {w}
@@ -338,6 +375,7 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                   </div>
                 )
               )}
+              </div>
             </div>
             <p className="mute" style={{ margin: '10px 0 0' }}>
               <b>✓</b> every path kept · like <b>2/3</b> some kept · <b>—</b> no active path that day · dim days
@@ -376,8 +414,18 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
         const confirming = confirm && confirm.id === id
 
         return (
-          <section key={id} className="card habit-card" style={{ '--tint': habit.tint }}>
-            <div className="habit-head">
+          <section
+            key={id}
+            className="card habit-card"
+            style={{ '--tint': habit.tint }}
+            onClick={cardTap(id)}
+          >
+            <button
+              type="button"
+              className="habit-head"
+              aria-label={`Open ${habit.name} full view`}
+              onClick={(e) => openDetail(id, e)}
+            >
               <div className="habit-icon" aria-hidden="true">
                 {habit.emoji}
               </div>
@@ -387,7 +435,10 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
                   {run?.anchor ? `current run began ${fmtAnchor(run.anchor)}` : 'ready when you are'}
                 </div>
               </div>
-            </div>
+              <span className="habit-open-hint" aria-hidden="true">
+                ⌄
+              </span>
+            </button>
 
             <div className="streak-row">
               <GrowthPlant streak={cur} size={84} />
@@ -500,6 +551,16 @@ export default function Journey({ picks, runs, checkins, stripView = 'week', set
           </p>
         )}
       </section>
+
+      {detail && (
+        <HabitDetail
+          habitId={detail.id}
+          fromRect={detail.rect}
+          runs={runs}
+          checkins={checkins}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   )
 }

@@ -428,12 +428,30 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            // Back quietly leaves the app; state is preserved for next time.
+        // The page gets first claim on back: full-screen overlays (habit
+        // detail, keepsake, celebration card) close like native screens.
+        // evaluateJavascript is async, so the no-overlay fallback is scheduled
+        // with a short grace period and cancelled if the page consumes it.
+        if (webView == null) {
             moveTaskToBack(true);
+            return;
         }
+        final Runnable fallback = () -> {
+            if (webView != null && webView.canGoBack()) {
+                webView.goBack();
+            } else {
+                // Back quietly leaves the app; state is preserved for next time.
+                moveTaskToBack(true);
+            }
+        };
+        webView.postDelayed(fallback, 220);
+        webView.evaluateJavascript(
+            "(function(){ try { return !!(window.__nlAndroidBack && window.__nlAndroidBack()); } catch (e) { return false; } })()",
+            value -> {
+                if (value != null && value.trim().equals("true")) {
+                    webView.removeCallbacks(fallback);
+                }
+            });
     }
 
     @Override
