@@ -40,6 +40,14 @@ jobs:
           npm ci
           npm run build
 
+      # Catch bundle bloat WHERE IT ENTERS: per-directory ceilings over Vite's
+      # per-module size stats (vendor, components, lib, data). Runs before the
+      # slow Gradle build so an over-budget bundle fails in seconds, and names
+      # the heaviest modules right in the summary.
+      - name: Enforce per-directory bundle budgets
+        run: |
+          BUNDLE_BUDGET_SUMMARY="$GITHUB_STEP_SUMMARY" node scripts/check-bundle-budgets.mjs bundle-stats.json
+
       # The Android app bundles the built site under android/app/src/main/assets/www.
       # Refresh it from this push's build so the APK always matches the repo head.
       - name: Refresh bundled site assets
